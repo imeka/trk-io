@@ -1,0 +1,8 @@
+[package]
+name = "rust_trk"
+version = "0.1.0"
+authors = ["Nil Goyette <nil.goyette@imeka.ca>"]
+
+[dependencies]
+byteorder = "1.1.0"
+nalgebra = "0.13.0"
