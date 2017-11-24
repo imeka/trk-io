@@ -19,7 +19,8 @@ Highlights
 TODOs
 ---------
 
-- Add tests
+- Clean this lib! The project structure is wrong and there are still some hardcoded path.
+- Add tests to ensure that our highlights are true!
 - Change the backend? Maybe use ``nalgebra``?
 - Writing is not realy practical. All streamlines once. We need to be able to
   write the file per streamline.
