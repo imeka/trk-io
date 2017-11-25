@@ -71,6 +71,21 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_construction() {
+        let streamlines = Streamlines::new(
+            Affine::identity(),
+            vec![2, 3, 2],
+            vec![Point::new(1.0, 0.0, 0.0),
+                 Point::new(2.0, 0.0, 0.0),
+                 Point::new(0.0, 1.0, 0.0),
+                 Point::new(0.0, 2.0, 0.0),
+                 Point::new(0.0, 3.0, 0.0),
+                 Point::new(0.0, 0.0, 1.0),
+                 Point::new(0.0, 0.0, 2.0)]);
+        assert_eq!(streamlines.offsets, vec![0, 2, 5, 7]);
+    }
+
+    #[test]
     fn test_iterator() {
         let streamlines = Streamlines::new(
             Affine::identity(),
