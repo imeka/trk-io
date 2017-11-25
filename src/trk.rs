@@ -1,15 +1,12 @@
 
-extern crate byteorder;
-extern crate nalgebra;
-
 // use std::mem::size_of;
 use std::fs::{File};
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::slice::from_raw_parts;
 use std::str::from_utf8;
 
-use trk::byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use trk::nalgebra::{Matrix4, U3, Vector4};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use nalgebra::{Matrix4, U3, Vector4};
 
 use streamlines::{Streamlines, Point};
 
@@ -42,7 +39,7 @@ const HEADER_SIZE: usize = 1000;  // size_of::<Header>();
 impl Header {
     fn get_scalar(&self, i: usize) -> &str {
         if i >= 10 {
-            panic!("");
+            panic!("There's no more than {} scalars", i);
         }
         let min_ = i * 20;
         let max_ = min_ + 10;
@@ -52,7 +49,7 @@ impl Header {
 
     fn get_property(&self, i: usize) -> &str {
         if i >= 10 {
-            panic!("");
+            panic!("There's no more than {} properties", i);
         }
         let min_ = i * 20;
         let max_ = min_ + 10;
@@ -90,7 +87,7 @@ impl Header {
 }
 
 fn read_header(path: &str) -> Header {
-    let f = File::open(path).expect("QQQ");
+    let f = File::open(path).expect("Can't read trk file.");
     let mut reader = BufReader::new(f);
     unsafe {
         let mut s = ::std::mem::uninitialized();
@@ -143,7 +140,7 @@ pub fn read_streamlines(path: &str) -> Streamlines {
     let affine = get_affine(&header);
     println!("{}", affine);
 
-    let mut f = File::open(path).expect("QQQ");
+    let mut f = File::open(path).expect("Can't read trk file.");
     f.seek(SeekFrom::Start(HEADER_SIZE as u64)).unwrap();
     let mut reader = BufReader::new(f);
 
@@ -170,11 +167,11 @@ pub fn read_streamlines(path: &str) -> Streamlines {
                 let z = float_buffer[idx + 2];
 
                 // Transform point with affine
-                let p = Point {
-                    x: x * affine[0] + y * affine[4] + z * affine[8] + affine[12],
-                    y: x * affine[1] + y * affine[5] + z * affine[9] + affine[13],
-                    z: x * affine[2] + y * affine[6] + z * affine[10] + affine[14]
-                };
+                let p = Point::new(
+                    x * affine[0] + y * affine[4] + z * affine[8] + affine[12],
+                    x * affine[1] + y * affine[5] + z * affine[9] + affine[13],
+                    x * affine[2] + y * affine[6] + z * affine[10] + affine[14]
+                );
                 v.push(p);
                 idx += 3 + header.n_scalars as usize;
             }
@@ -182,8 +179,8 @@ pub fn read_streamlines(path: &str) -> Streamlines {
         else { break; }
     }
 
-    println!("Nm. points: {}", v.len());
-    println!("Nm. streamlines: {}", lengths.len());
+    println!("Nb. points: {}", v.len());
+    println!("Nb. streamlines: {}", lengths.len());
 
     Streamlines::new(affine, lengths, v)
 }
@@ -196,12 +193,13 @@ pub fn write_streamlines(streamlines: &Streamlines, path: &str) {
         .try_inverse().unwrap();
     println!("{}", affine);
 
-    let f = File::create(path).expect("QQQ");
+    let f = File::create(path).expect("Can't create new trk file.");
     let mut writer = BufWriter::new(f);
 
     {
+        // TODO Create a default!
         let header = Header {
-            id_string: [84, 82, 65, 67, 75, 0],
+            id_string: *b"TRACK\0",
             dim: [1, 1, 1],                         // From header
             voxel_size: [1.0, 1.0, 1.0],            // From header
             origin: [0.0, 0.0, 0.0],                // From header
@@ -239,17 +237,16 @@ pub fn write_streamlines(streamlines: &Streamlines, path: &str) {
             let raw = &streamlines.data[idx];
 
             // First, translate point
-            let t = Point {
-                x: raw.x - t_x,
-                y: raw.y - t_y,
-                z: raw.z - t_z
-            };
+            let t = Point::new(
+                raw.x - t_x,
+                raw.y - t_y,
+                raw.z - t_z);
             // Then transform point with affine
-            let p = Point {
-                x: t.x * affine[0] + t.y * affine[3] + t.z * affine[6],
-                y: t.x * affine[1] + t.y * affine[4] + t.z * affine[7],
-                z: t.x * affine[2] + t.y * affine[5] + t.z * affine[8]
-            };
+            let p = Point::new(
+                t.x * affine[0] + t.y * affine[3] + t.z * affine[6],
+                t.x * affine[1] + t.y * affine[4] + t.z * affine[7],
+                t.x * affine[2] + t.y * affine[5] + t.z * affine[8]
+            );
             writer.write_f32::<LittleEndian>(p.x).unwrap();
             writer.write_f32::<LittleEndian>(p.y).unwrap();
             writer.write_f32::<LittleEndian>(p.z).unwrap();
