@@ -1,8 +1,9 @@
 [package]
-name = "rust_trk"
+name = "trk-io"
 version = "0.1.0"
 authors = ["Nil Goyette <nil.goyette@imeka.ca>"]
 
 [dependencies]
 byteorder = "1.1.0"
+docopt = "0.8.1"
 nalgebra = "0.13.0"

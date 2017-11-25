@@ -12,32 +12,36 @@ use streamlines::{Streamlines, Point};
 
 // http://www.trackvis.org/docs/?subsect=fileformat
 #[repr(C, packed)]
-struct Header {
-    id_string: [u8; 6],
-    dim: [i16; 3],
-    voxel_size: [f32; 3],
-    origin: [f32; 3],
-    n_scalars: i16,
-    scalar_name: [u8; 200],    // [10][20]
-    n_properties: i16,
-    property_name: [u8; 200],  // [10][20]
-    vox_to_ras: [f32; 16],     // [4][4]
-    reserved: [u8; 444],
-    voxel_order: [u8; 4],
-    pad2: [u8; 4],
-    image_orientation_patient: [f32; 6],
-    pad1: [u8; 2],
-    invert_x: u8, invert_y: u8, invert_z: u8,
-    swap_x: u8, swap_y: u8, swap_z: u8,
-    n_count: i32,
-    version: i32,
-    hdr_size: i32
+pub struct Header {
+    pub id_string: [u8; 6],
+    pub dim: [i16; 3],
+    pub voxel_size: [f32; 3],
+    pub origin: [f32; 3],
+    pub n_scalars: i16,
+    pub scalar_name: [u8; 200],    // [10][20]
+    pub n_properties: i16,
+    pub property_name: [u8; 200],  // [10][20]
+    pub vox_to_ras: [f32; 16],     // [4][4]
+    pub reserved: [u8; 444],
+    pub voxel_order: [u8; 4],
+    pub pad2: [u8; 4],
+    pub image_orientation_patient: [f32; 6],
+    pub pad1: [u8; 2],
+    pub invert_x: u8,
+    pub invert_y: u8,
+    pub invert_z: u8,
+    pub swap_x: u8,
+    pub swap_y: u8,
+    pub swap_z: u8,
+    pub n_count: i32,
+    pub version: i32,
+    pub hdr_size: i32
 }
 
 const HEADER_SIZE: usize = 1000;  // size_of::<Header>();
 
 impl Header {
-    fn get_scalar(&self, i: usize) -> &str {
+    pub fn get_scalar(&self, i: usize) -> &str {
         if i >= 10 {
             panic!("There's no more than {} scalars", i);
         }
@@ -47,7 +51,7 @@ impl Header {
         from_utf8(name).expect("get_scalar failed")
     }
 
-    fn get_property(&self, i: usize) -> &str {
+    pub fn get_property(&self, i: usize) -> &str {
         if i >= 10 {
             panic!("There's no more than {} properties", i);
         }
@@ -56,37 +60,9 @@ impl Header {
         let name = &self.property_name[min_..max_];
         from_utf8(name).expect("get_property failed")
     }
-
-    pub fn print(&self) {
-        println!("id_string: {:?}", &self.id_string);
-        println!("dim: {:?}", self.dim);
-        println!("voxel_size: {:?}", self.voxel_size);
-        println!("origin: {:?}", self.origin);
-        println!("n_scalars: {:?}", self.n_scalars);
-        for i in 0..self.n_scalars {
-            println!("scalar_name {}: {}",
-                i, self.get_scalar(i as usize));
-        }
-        println!("n_properties: {:?}", self.n_properties);
-        for i in 0..self.n_properties {
-            println!("property_name {}: {}",
-                i, self.get_property(i as usize));
-        }
-        println!("vox_to_ras: {:?}", self.vox_to_ras);
-        println!("voxel_order: {:?}", &self.voxel_order);
-        println!("image_orientation_patient: {:?}",
-                    self.image_orientation_patient);
-        println!("invert: {:?} {:?} {:?}",
-                    self.invert_x, self.invert_y, self.invert_z);
-        println!("swap: {:?} {:?} {:?}",
-                    self.swap_x, self.swap_y, self.swap_z);
-        println!("n_count: {:?}", self.n_count);
-        println!("version: {:?}", self.version);
-        println!("hdr_size: {:?}", self.hdr_size);
-    }
 }
 
-fn read_header(path: &str) -> Header {
+pub fn read_header(path: &str) -> Header {
     let f = File::open(path).expect("Can't read trk file.");
     let mut reader = BufReader::new(f);
     unsafe {
@@ -135,8 +111,6 @@ fn get_affine(header: &Header) -> Matrix4<f32> {
 
 pub fn read_streamlines(path: &str) -> Streamlines {
     let header = read_header(path);
-    header.print();
-
     let affine = get_affine(&header);
     println!("{}", affine);
 
