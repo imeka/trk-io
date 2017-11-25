@@ -1,12 +1,12 @@
 trk-io
-=========
+======
 
 The `trk-io` crate provides a `TrackVis`__  (.trk) reader and writer.
 
 __ http://www.trackvis.org/docs/?subsect=fileformat
 
 Highlights
----------
+----------
 
 - Can read and write `TrackVis` files. Handles affine transformation as
   ``nibabel.streamlines`` and `MI-Brain`__ would.
@@ -17,11 +17,10 @@ Highlights
   __ https://www.imeka.ca/mi-brain
 
 TODOs
----------
+-----
 
-- Clean this lib! The project structure is wrong and there are still some hardcoded path.
 - Add tests to ensure that our highlights are true!
-- Change the backend? Maybe use ``nalgebra``?
+- Use ``nalgebra`` more.
 - Writing is not realy practical. All streamlines once. We need to be able to
   write the file per streamline.
 - Handle colors. Can read a colored file but will ignore the color information.
