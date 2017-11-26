@@ -16,6 +16,7 @@ pub fn read_streamlines(path: &str) -> Streamlines {
     f.seek(SeekFrom::Start(HEADER_SIZE as u64)).unwrap();
     let mut reader = BufReader::new(f);
 
+    let chunk_by = 3 + header.n_scalars as usize;
     let mut float_buffer = vec![0f32; 300];
     let mut v = Vec::with_capacity(3000);
     let mut lengths = Vec::new();
@@ -32,15 +33,9 @@ pub fn read_streamlines(path: &str) -> Streamlines {
                     float_buffer.as_mut_slice()).unwrap();
             }
 
-            // TODO float_buffer.chunks()
-            let mut idx: usize = 0;
-            for _ in 0..nb_points {
-                let p = Point::new(
-                    float_buffer[idx],
-                    float_buffer[idx + 1],
-                    float_buffer[idx + 2]);
+            for floats in float_buffer.chunks(chunk_by) {
+                let p = Point::new(floats[0], floats[1], floats[2]);
                 v.push((p * affine) + translation);
-                idx += 3 + header.n_scalars as usize;
             }
         }
         else { break; }
