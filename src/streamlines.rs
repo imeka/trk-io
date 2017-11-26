@@ -1,14 +1,15 @@
 
 use std::vec::Vec;
 
-use nalgebra::{Vector3};
+use nalgebra::{RowVector3};
 
-use header::Affine;
+use header::{Affine, Translation};
 
-pub type Point = Vector3<f32>;
+pub type Point = RowVector3<f32>;
 
 pub struct Streamlines {
     pub affine: Affine,
+    pub translation: Translation,
     pub lengths: Vec<usize>,
     pub offsets: Vec<usize>,
     pub data: Vec<Point>,
@@ -48,7 +49,12 @@ impl<'a> Iterator for StreamlinesIterator<'a> {
 }
 
 impl Streamlines {
-    pub fn new(affine: Affine, lengths: Vec<usize>, m: Vec<Point>) -> Streamlines {
+    pub fn new(
+        affine: Affine,
+        translation: Translation,
+        lengths: Vec<usize>,
+        m: Vec<Point>
+    ) -> Streamlines {
         // CumSum over lengths
         let mut offsets = Vec::with_capacity(lengths.len() + 1);
         let mut sum = 0;
@@ -58,12 +64,7 @@ impl Streamlines {
         }
         offsets.push(sum);
 
-        Streamlines {
-            affine: affine,
-            lengths: lengths,
-            offsets: offsets,
-            data: m
-        }
+        Streamlines { affine, translation, lengths, offsets, data: m }
     }
 }
 
@@ -75,6 +76,7 @@ mod tests {
     fn test_construction() {
         let streamlines = Streamlines::new(
             Affine::identity(),
+            Translation::new(0.0, 0.0, 0.0),
             vec![2, 3, 2],
             vec![Point::new(1.0, 0.0, 0.0),
                  Point::new(2.0, 0.0, 0.0),
@@ -90,6 +92,7 @@ mod tests {
     fn test_iterator() {
         let streamlines = Streamlines::new(
             Affine::identity(),
+            Translation::new(0.0, 0.0, 0.0),
             vec![2, 3],
             vec![Point::new(1.0, 0.0, 0.0),
                  Point::new(2.0, 0.0, 0.0),

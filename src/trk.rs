@@ -1,17 +1,15 @@
 
 use std::fs::{File};
-use std::io::{BufReader, BufWriter, Seek, SeekFrom, Write};
-use std::slice::from_raw_parts;
+use std::io::{BufReader, BufWriter, Seek, SeekFrom};
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use nalgebra::{U3};
 
-use header::{get_affine, Header, HEADER_SIZE, read_header};
+use header::{Header, HEADER_SIZE, read_header};
 use streamlines::{Streamlines, Point};
 
 pub fn read_streamlines(path: &str) -> Streamlines {
     let header = read_header(path);
-    let affine = get_affine(&header);
+    let (affine, translation) = header.get_affine();
     println!("{}", affine);
 
     let mut f = File::open(path).expect("Can't read trk file.");
@@ -34,19 +32,14 @@ pub fn read_streamlines(path: &str) -> Streamlines {
                     float_buffer.as_mut_slice()).unwrap();
             }
 
+            // TODO float_buffer.chunks()
             let mut idx: usize = 0;
             for _ in 0..nb_points {
-                let x = float_buffer[idx];
-                let y = float_buffer[idx + 1];
-                let z = float_buffer[idx + 2];
-
-                // Transform point with affine
                 let p = Point::new(
-                    x * affine[0] + y * affine[4] + z * affine[8] + affine[12],
-                    x * affine[1] + y * affine[5] + z * affine[9] + affine[13],
-                    x * affine[2] + y * affine[6] + z * affine[10] + affine[14]
-                );
-                v.push(p);
+                    float_buffer[idx],
+                    float_buffer[idx + 1],
+                    float_buffer[idx + 2]);
+                v.push((p * affine) + translation);
                 idx += 3 + header.n_scalars as usize;
             }
         }
@@ -56,53 +49,29 @@ pub fn read_streamlines(path: &str) -> Streamlines {
     println!("Nb. points: {}", v.len());
     println!("Nb. streamlines: {}", lengths.len());
 
-    Streamlines::new(affine, lengths, v)
+    Streamlines::new(affine, translation, lengths, v)
 }
 
 pub fn write_streamlines(streamlines: &Streamlines, path: &str) {
-    let t_x = streamlines.affine[12];
-    let t_y = streamlines.affine[13];
-    let t_z = streamlines.affine[14];
-    let affine = streamlines.affine.fixed_slice::<U3, U3>(0, 0)
-        .try_inverse().unwrap();
-    println!("{}", affine);
+    let affine = streamlines.affine.try_inverse().unwrap();
+    let translation = streamlines.translation;
 
     let f = File::create(path).expect("Can't create new trk file.");
     let mut writer = BufWriter::new(f);
 
-    {
-        let header = Header {
-            n_count: streamlines.lengths.len() as i32,
-            ..Header::default()
-        };
-        let bytes = unsafe {
-            from_raw_parts(&header as *const Header as *const u8, HEADER_SIZE)
-        };
-        writer.write(bytes).unwrap();
-    }
+    let header = Header {
+        n_count: streamlines.lengths.len() as i32,
+        ..Header::default()
+    };
+    header.write(&mut writer);
 
-    let mut idx: usize = 0;
-    for length in &streamlines.lengths {
-        writer.write_i32::<LittleEndian>(*length as i32).unwrap();
-        for _ in 0..*length {
-            let raw = &streamlines.data[idx];
-
-            // First, translate point
-            let t = Point::new(
-                raw.x - t_x,
-                raw.y - t_y,
-                raw.z - t_z);
-            // Then transform point with affine
-            let p = Point::new(
-                t.x * affine[0] + t.y * affine[3] + t.z * affine[6],
-                t.x * affine[1] + t.y * affine[4] + t.z * affine[7],
-                t.x * affine[2] + t.y * affine[5] + t.z * affine[8]
-            );
+    for streamline in streamlines {
+        writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
+        for p in streamline {
+            let p = (p - translation) * affine;
             writer.write_f32::<LittleEndian>(p.x).unwrap();
             writer.write_f32::<LittleEndian>(p.y).unwrap();
             writer.write_f32::<LittleEndian>(p.z).unwrap();
-
-            idx += 1;
         }
     }
 }

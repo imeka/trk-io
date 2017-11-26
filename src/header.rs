@@ -1,11 +1,15 @@
 
 use std::fs::{File};
 use std::io::{BufReader, Read};
+use std::slice::from_raw_parts;
 use std::str::from_utf8;
 
-use nalgebra::{Matrix4, Vector4};
+use byteorder::{WriteBytesExt};
+use nalgebra::{Matrix3, Matrix4, RowVector3, Vector4};
 
-pub type Affine = Matrix4<f32>;
+type Affine4 = Matrix4<f32>;
+pub type Affine = Matrix3<f32>;
+pub type Translation = RowVector3<f32>;
 
 // http://www.trackvis.org/docs/?subsect=fileformat
 #[repr(C, packed)]
@@ -88,6 +92,47 @@ impl Header {
         let name = &self.property_name[min_..max_];
         from_utf8(name).expect("get_property failed")
     }
+
+    pub fn get_affine(&self) -> (Affine, Translation) {
+        let mut affine = Affine4::identity();
+
+        let scale = Affine4::from_diagonal(&Vector4::new(
+            1.0 / self.voxel_size[0],
+            1.0 / self.voxel_size[1],
+            1.0 / self.voxel_size[2],
+            1.0));
+        affine = scale * affine;
+
+        let offset = Affine4::new(
+            1.0, 0.0, 0.0, -0.5,
+            0.0, 1.0, 0.0, -0.5,
+            0.0, 0.0, 1.0, -0.5,
+            0.0, 0.0, 0.0, 1.0);
+        affine = offset * affine;
+
+        // Lotta complicated shits. TODO
+        // let header_ornt = from_utf8(&header.voxel_order).unwrap();
+        // let affine_ornt = "RAS";
+        //let M = Affine::identity();
+        //affine = M * affine;
+
+        let voxel_to_rasmm = Affine4::from_iterator(
+            self.vox_to_ras.iter().cloned()).transpose();
+        affine = voxel_to_rasmm * affine;
+
+        let translation = RowVector3::new(
+            affine[12], affine[13], affine[14]);
+        // TODO fixed_slice seems better but it's only a reference
+        let affine = affine.remove_row(3).remove_column(3);
+        (affine, translation)
+    }
+
+    pub fn write<W: WriteBytesExt>(&self, writer: &mut W) {
+        let bytes = unsafe {
+            from_raw_parts(self as *const Header as *const u8, HEADER_SIZE)
+        };
+        writer.write(bytes).unwrap();
+    }
 }
 
 pub fn read_header(path: &str) -> Header {
@@ -105,34 +150,4 @@ pub fn read_header(path: &str) -> Header {
             }
         }
     }
-}
-
-pub fn get_affine(header: &Header) -> Matrix4<f32> {
-    let mut affine = Matrix4::identity();
-
-    let scale = Matrix4::from_diagonal(&Vector4::new(
-        1.0 / header.voxel_size[0],
-        1.0 / header.voxel_size[1],
-        1.0 / header.voxel_size[2],
-        1.0));
-    affine = scale * affine;
-
-    let offset = Matrix4::new(
-        1.0, 0.0, 0.0, -0.5,
-        0.0, 1.0, 0.0, -0.5,
-        0.0, 0.0, 1.0, -0.5,
-        0.0, 0.0, 0.0, 1.0);
-    affine = offset * affine;
-
-    // Lotta complicated shits. TODO
-    // let header_ornt = from_utf8(&header.voxel_order).unwrap();
-    // let affine_ornt = "RAS";
-    //let M = Matrix4::<f32>::identity();
-    //affine = M * affine;
-
-    let voxel_to_rasmm = Matrix4::from_iterator(
-        header.vox_to_ras.iter().cloned()).transpose();
-    affine = voxel_to_rasmm * affine;
-
-    affine
 }
