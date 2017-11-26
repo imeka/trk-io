@@ -66,6 +66,10 @@ impl Streamlines {
 
         Streamlines { affine, translation, lengths, offsets, data: m }
     }
+
+    pub fn len(&self) -> usize {
+        self.lengths.len()
+    }
 }
 
 #[cfg(test)]
@@ -85,6 +89,7 @@ mod tests {
                  Point::new(0.0, 3.0, 0.0),
                  Point::new(0.0, 0.0, 1.0),
                  Point::new(0.0, 0.0, 2.0)]);
+        assert_eq!(streamlines.len(), 3);
         assert_eq!(streamlines.offsets, vec![0, 2, 5, 7]);
     }
 
