@@ -1,10 +1,11 @@
 
 use std::vec::Vec;
 
-use nalgebra::{Matrix4, Vector3};
+use nalgebra::{Vector3};
+
+use header::Affine;
 
 pub type Point = Vector3<f32>;
-pub type Affine = Matrix4<f32>;
 
 pub struct Streamlines {
     pub affine: Affine,

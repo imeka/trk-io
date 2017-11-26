@@ -5,7 +5,7 @@ extern crate trk_io;
 use docopt::Docopt;
 use std::path::Path;
 use std::str;
-use trk_io::trk::read_header;
+use trk_io::header::read_header;
 
 static USAGE: &'static str = "
 Print a TrackVis (.trk) header in an readable form
@@ -41,13 +41,11 @@ fn main() {
     println!("origin: {:?}", header.origin);
     println!("n_scalars: {:?}", header.n_scalars);
     for i in 0..header.n_scalars {
-        println!("scalar_name {}: {}",
-            i, header.get_scalar(i as usize));
+        println!("  {}: {}",i, header.get_scalar(i as usize));
     }
     println!("n_properties: {:?}", header.n_properties);
     for i in 0..header.n_properties {
-        println!("property_name {}: {}",
-            i, header.get_property(i as usize));
+        println!("  {}: {}", i, header.get_property(i as usize));
     }
     println!("vox_to_ras: {:?}", &header.vox_to_ras[0..4]);
     println!("            {:?}", &header.vox_to_ras[4..8]);
