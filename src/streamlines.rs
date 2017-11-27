@@ -1,4 +1,5 @@
 
+use std::ops::Index;
 use std::vec::Vec;
 
 use nalgebra::{RowVector3};
@@ -37,14 +38,22 @@ impl<'a> Iterator for StreamlinesIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.it_idx < self.streamlines.lengths.len() {
-            let start = self.streamlines.offsets[self.it_idx];
             self.it_idx += 1;
-            let end = self.streamlines.offsets[self.it_idx];
-            Some(&self.streamlines.data[start..end])
+            Some(&self.streamlines[self.it_idx - 1])
         }
         else {
             None
         }
+    }
+}
+
+impl Index<usize> for Streamlines {
+    type Output = [Point];
+
+    fn index<'a>(&'a self, i: usize) -> &'a Self::Output {
+        let start = self.offsets[i];
+        let end = self.offsets[i + 1];
+        &self.data[start..end]
     }
 }
 
@@ -105,13 +114,13 @@ mod tests {
                  Point::new(0.0, 2.0, 0.0),
                  Point::new(0.0, 3.0, 0.0)]);
         let mut iter = streamlines.into_iter();
-        assert_eq!(iter.next(),
-                   Some(vec![Point::new(1.0, 0.0, 0.0),
-                             Point::new(2.0, 0.0, 0.0)].as_slice()));
-        assert_eq!(iter.next(),
-                   Some(vec![Point::new(0.0, 1.0, 0.0),
-                             Point::new(0.0, 2.0, 0.0),
-                             Point::new(0.0, 3.0, 0.0)].as_slice()));
+        assert_eq!(iter.next().unwrap(),
+                   [Point::new(1.0, 0.0, 0.0),
+                    Point::new(2.0, 0.0, 0.0)]);
+        assert_eq!(iter.next().unwrap(),
+                   [Point::new(0.0, 1.0, 0.0),
+                    Point::new(0.0, 2.0, 0.0),
+                    Point::new(0.0, 3.0, 0.0)]);
         assert_eq!(iter.next(), None);
     }
 }
