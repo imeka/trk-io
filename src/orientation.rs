@@ -72,8 +72,10 @@ fn io_orientations(affine: &Affine) -> Orientations {
 
     // Transform below is polar decomposition, returning the closest
     // shearless matrix R to RS
-    let svd = rs.svd(true, true);
+    println!("#A#");
+    let svd = rs.svd(false, false);
     let (u, s, v_t) = (svd.u.unwrap(), svd.singular_values, svd.v_t.unwrap());
+    println!("#B#");
 
     // Threshold the singular values to determine the rank.
     let tol = s.as_slice().iter().cloned().fold(0.0, f32::max)
@@ -209,4 +211,21 @@ pub fn inverse_orientations_affine(
     undo_flip[(2, 3)] = undo_flip[(2, 2)] * center[2] - center[2];
 
     undo_flip * undo_reorder
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_affine_to_axcodes() {
+        /*assert_eq!(
+            affine_to_axcodes(&Affine::identity()),
+            "RAS".to_string());*/
+
+        let affine = Affine::new(0.0, 1.0, 0.0,
+                                 -1.0, 0.0, 0.0,
+                                 0.0, 0.0, 1.0);
+        assert_eq!(affine_to_axcodes(&affine), "RAS".to_string());
+    }
 }
