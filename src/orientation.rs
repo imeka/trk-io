@@ -283,4 +283,32 @@ mod tests {
                 (0, Direction::Normal)]),
             "AIR");
     }
+
+    #[test]
+    fn test_orientations_transform() {
+        assert_eq!(
+            orientations_transform(
+                &[(0, Direction::Normal),
+                  (1, Direction::Normal),
+                  (2, Direction::Reversed)],
+                &[(1, Direction::Normal),
+                  (0, Direction::Normal),
+                  (2, Direction::Normal)]
+            ),
+            [(1, Direction::Normal),
+             (0, Direction::Normal),
+             (2, Direction::Reversed)]);
+        assert_eq!(
+            orientations_transform(
+                &[(0, Direction::Normal),
+                  (1, Direction::Normal),
+                  (2, Direction::Normal)],
+                &[(2, Direction::Normal),
+                  (0, Direction::Reversed),
+                  (1, Direction::Normal)]
+            ),
+            [(1, Direction::Reversed),
+             (2, Direction::Normal),
+             (0, Direction::Normal)]);
+    }
 }
