@@ -231,4 +231,28 @@ mod tests {
         assert_eq!(affine_to_axcodes(&affine), "PRS".to_string());
         assert_eq!(affine_to_axcodes(&affine), "PRS".to_string());
     }
+
+    #[test]
+    fn test_axcodes_to_orientations() {
+        assert_eq!(
+            axcodes_to_orientations("RAS"),
+            [(0, Direction::Normal),
+             (1, Direction::Normal),
+             (2, Direction::Normal)]);
+        assert_eq!(
+            axcodes_to_orientations("LPI"),
+            [(0, Direction::Reversed),
+             (1, Direction::Reversed),
+             (2, Direction::Reversed)]);
+        assert_eq!(
+            axcodes_to_orientations("SAR"),
+            [(2, Direction::Normal),
+             (1, Direction::Normal),
+             (0, Direction::Normal)]);
+        assert_eq!(
+            axcodes_to_orientations("AIR"),
+            [(1, Direction::Normal),
+             (2, Direction::Reversed),
+             (0, Direction::Normal)]);
+    }
 }
