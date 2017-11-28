@@ -4,7 +4,7 @@ use std::vec::Vec;
 
 use nalgebra::{RowVector3};
 
-use header::{Affine, Translation};
+use {Affine, Translation};
 
 pub type Point = RowVector3<f32>;
 

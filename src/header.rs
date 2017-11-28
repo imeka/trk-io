@@ -5,11 +5,11 @@ use std::slice::from_raw_parts;
 use std::str::from_utf8;
 
 use byteorder::{WriteBytesExt};
-use nalgebra::{Matrix3, Matrix4, RowVector3, Vector4};
+use nalgebra::{RowVector3, U3, Vector4};
 
-type Affine4 = Matrix4<f32>;
-pub type Affine = Matrix3<f32>;
-pub type Translation = RowVector3<f32>;
+use {Affine, Affine4, Translation};
+use orientation::{affine_to_axcodes, axcodes_to_orientations,
+                  inverse_orientations_affine, orientations_transform};
 
 // http://www.trackvis.org/docs/?subsect=fileformat
 #[repr(C, packed)]
@@ -110,20 +110,23 @@ impl Header {
             0.0, 0.0, 0.0, 1.0);
         affine = offset * affine;
 
-        // Lotta complicated shits. TODO
-        // let header_ornt = from_utf8(&header.voxel_order).unwrap();
-        // let affine_ornt = "RAS";
-        //let M = Affine::identity();
-        //affine = M * affine;
-
         let voxel_to_rasmm = Affine4::from_iterator(
             self.vox_to_ras.iter().cloned()).transpose();
+
+        let header_ornt = axcodes_to_orientations(
+            from_utf8(&self.voxel_order).unwrap());
+        let affine_order = affine_to_axcodes(
+            &voxel_to_rasmm.fixed_slice::<U3, U3>(0, 0).into_owned());
+        let affine_ornt = axcodes_to_orientations(&affine_order);
+        let orientations = orientations_transform(&header_ornt, &affine_ornt);
+        let inv = inverse_orientations_affine(&orientations, self.dim);
+        affine = inv * affine;
+
         affine = voxel_to_rasmm * affine;
 
         let translation = RowVector3::new(
             affine[12], affine[13], affine[14]);
-        // TODO fixed_slice seems better but it's only a reference
-        let affine = affine.remove_row(3).remove_column(3);
+        let affine = affine.fixed_slice::<U3, U3>(0, 0).into_owned();
         (affine, translation)
     }
 

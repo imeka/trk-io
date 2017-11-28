@@ -7,10 +7,9 @@ use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use header::{Header, HEADER_SIZE, read_header};
 use streamlines::{Streamlines, Point};
 
-pub fn read_streamlines(path: &str) -> Streamlines {
+pub fn read_streamlines(path: &str) -> (Header, Streamlines) {
     let header = read_header(path);
     let (affine, translation) = header.get_affine();
-    println!("{}", affine);
 
     let mut f = File::open(path).expect("Can't read trk file.");
     f.seek(SeekFrom::Start(HEADER_SIZE as u64)).unwrap();
@@ -37,14 +36,16 @@ pub fn read_streamlines(path: &str) -> Streamlines {
                 let p = Point::new(floats[0], floats[1], floats[2]);
                 v.push((p * affine) + translation);
             }
+
+            // Ignore properties for now
+            for _ in 0..header.n_properties {
+                reader.read_f32::<LittleEndian>().unwrap();
+            }
         }
         else { break; }
     }
 
-    println!("Nb. points: {}", v.len());
-    println!("Nb. streamlines: {}", lengths.len());
-
-    Streamlines::new(affine, translation, lengths, v)
+    (header, Streamlines::new(affine, translation, lengths, v))
 }
 
 pub fn write_streamlines(streamlines: &Streamlines, path: &str) {
