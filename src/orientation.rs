@@ -255,4 +255,32 @@ mod tests {
              (2, Direction::Reversed),
              (0, Direction::Normal)]);
     }
+
+    #[test]
+    fn test_orientations_to_axcodes() {
+        assert_eq!(
+            orientations_to_axcodes([
+                (0, Direction::Normal),
+                (1, Direction::Normal),
+                (2, Direction::Normal)]),
+            "RAS");
+        assert_eq!(
+            orientations_to_axcodes([
+                (0, Direction::Reversed),
+                (1, Direction::Reversed),
+                (2, Direction::Reversed)]),
+            "LPI");
+        assert_eq!(
+            orientations_to_axcodes([
+                (2, Direction::Reversed),
+                (1, Direction::Reversed),
+                (0, Direction::Reversed)]),
+            "IPL");
+        assert_eq!(
+            orientations_to_axcodes([
+                (1, Direction::Normal),
+                (2, Direction::Reversed),
+                (0, Direction::Normal)]),
+            "AIR");
+    }
 }
