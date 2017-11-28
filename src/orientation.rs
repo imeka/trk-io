@@ -55,7 +55,7 @@ pub fn affine_to_axcodes(affine: &Affine) -> String {
 /// the output axes should be considered dropped in this orientation.
 fn io_orientations(affine: &Affine) -> Orientations {
     // Extract the underlying rotation, zoom, shear matrix
-    let rzs2 = affine * affine;
+    let rzs2 = affine.component_mul(affine);
     let mut zooms = RowVector3::new(
         (rzs2[0] + rzs2[1] + rzs2[2]).sqrt(),
         (rzs2[3] + rzs2[4] + rzs2[5]).sqrt(),
@@ -72,10 +72,8 @@ fn io_orientations(affine: &Affine) -> Orientations {
 
     // Transform below is polar decomposition, returning the closest
     // shearless matrix R to RS
-    println!("#A#");
-    let svd = rs.svd(false, false);
+    let svd = rs.svd(true, true);
     let (u, s, v_t) = (svd.u.unwrap(), svd.singular_values, svd.v_t.unwrap());
-    println!("#B#");
 
     // Threshold the singular values to determine the rank.
     let tol = s.as_slice().iter().cloned().fold(0.0, f32::max)
@@ -102,14 +100,17 @@ fn io_orientations(affine: &Affine) -> Orientations {
     for c in 0..3 {
         let mut argmax = 0;
         let mut max = 0.0;
+        let mut sign_max = 0.0;
         for (i, e) in r.column(c).iter().enumerate() {
-            if *e > max {
+            let e_abs = e.abs();
+            if e_abs > max {
                 argmax = i;
-                max = *e;
+                max = e_abs;
+                sign_max = *e;
             }
         }
 
-        if max >= 0.0 {
+        if sign_max >= 0.0 {
             orientations[c] = (argmax, Direction::Normal);
         } else {
             orientations[c] = (argmax, Direction::Reversed);
@@ -117,8 +118,9 @@ fn io_orientations(affine: &Affine) -> Orientations {
 
         // Remove the identified axis from further consideration, by
         // zeroing out the corresponding row in R
-        for e in r.row_mut(c).iter_mut() { *e = 0.0; }
+        for e in r.column_mut(c).iter_mut() { *e = 0.0; }
     }
+
     orientations
 }
 
@@ -219,13 +221,14 @@ mod tests {
 
     #[test]
     fn test_affine_to_axcodes() {
-        /*assert_eq!(
+        assert_eq!(
             affine_to_axcodes(&Affine::identity()),
-            "RAS".to_string());*/
+            "RAS".to_string());
 
         let affine = Affine::new(0.0, 1.0, 0.0,
                                  -1.0, 0.0, 0.0,
                                  0.0, 0.0, 1.0);
-        assert_eq!(affine_to_axcodes(&affine), "RAS".to_string());
+        assert_eq!(affine_to_axcodes(&affine), "PRS".to_string());
+        assert_eq!(affine_to_axcodes(&affine), "PRS".to_string());
     }
 }
