@@ -20,7 +20,7 @@ Highlights
 TODOs
 -----
 
-- Add reading/writing tests to ensure that our highlights are true!
+- Add writing tests
 - Write new streamlines using a reference header
 - Writing is not really practical because you need to have the complete
   streamlines before writing it. We need to be able to write the file per
