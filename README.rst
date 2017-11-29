@@ -10,6 +10,7 @@ Highlights
 
 - Can read and write `TrackVis` files. Handles affine transformation as
   ``nibabel.streamlines`` and `MI-Brain`__ would.
+- ``Reader`` can read all streamlines at once or can be used as a generator.
 - Follows ``nibabel.streamlines`` architecture (all 3D points are in a single
   ``Vec![Point3D]``). Currently, this is only useful for performance, but it may
   lead to easier changes when and if we support BLAS.
@@ -19,10 +20,11 @@ Highlights
 TODOs
 -----
 
-- Add tests to ensure that our highlights are true!
-- Use ``nalgebra`` more.
-- Writing is not realy practical. All streamlines once. We need to be able to
-  write the file per streamline.
+- Add reading/writing tests to ensure that our highlights are true!
+- Write new streamlines using a reference header
+- Writing is not really practical because you need to have the complete
+  streamlines before writing it. We need to be able to write the file per
+  streamline.
 - Handle colors. Can read a colored file but will ignore the color information.
-  Idem for all scalars and properties. In fact, we may never support them but we
-  will at least support the colors.
+  Idem for all scalars and properties.
+- Support endianness.
