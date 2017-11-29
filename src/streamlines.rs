@@ -4,14 +4,10 @@ use std::vec::Vec;
 
 use nalgebra::{RowVector3};
 
-use {Affine, Translation};
-
 pub type Point = RowVector3<f32>;
 pub type Points = Vec<Point>;
 
 pub struct Streamlines {
-    pub affine: Affine,
-    pub translation: Translation,
     pub lengths: Vec<usize>,
     pub offsets: Vec<usize>,
     pub data: Points,
@@ -60,8 +56,6 @@ impl Index<usize> for Streamlines {
 
 impl Streamlines {
     pub fn new(
-        affine: Affine,
-        translation: Translation,
         lengths: Vec<usize>,
         m: Points
     ) -> Streamlines {
@@ -74,7 +68,7 @@ impl Streamlines {
         }
         offsets.push(sum);
 
-        Streamlines { affine, translation, lengths, offsets, data: m }
+        Streamlines { lengths, offsets, data: m }
     }
 
     pub fn len(&self) -> usize {
@@ -89,8 +83,6 @@ mod tests {
     #[test]
     fn test_construction() {
         let streamlines = Streamlines::new(
-            Affine::identity(),
-            Translation::new(0.0, 0.0, 0.0),
             vec![2, 3, 2],
             vec![Point::new(1.0, 0.0, 0.0),
                  Point::new(2.0, 0.0, 0.0),
@@ -106,8 +98,6 @@ mod tests {
     #[test]
     fn test_iterator() {
         let streamlines = Streamlines::new(
-            Affine::identity(),
-            Translation::new(0.0, 0.0, 0.0),
             vec![2, 3],
             vec![Point::new(1.0, 0.0, 0.0),
                  Point::new(2.0, 0.0, 0.0),

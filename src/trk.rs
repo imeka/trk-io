@@ -45,7 +45,7 @@ impl Reader {
             else { break; }
         }
 
-        Streamlines::new(self.affine, self.translation, lengths, v)
+        Streamlines::new(lengths, v)
     }
 
     fn read_streamline(&mut self, points: &mut Points, nb_points: usize) {
@@ -84,9 +84,13 @@ impl Iterator for Reader {
     }
 }
 
-pub fn write_streamlines(streamlines: &Streamlines, path: &str) {
-    let affine = streamlines.affine.try_inverse().unwrap();
-    let translation = streamlines.translation;
+pub fn write_streamlines(
+    header: &Header,
+    streamlines: &Streamlines,
+    path: &str)
+{
+    let (affine, translation) = header.get_affine();
+    let affine = affine.try_inverse().unwrap();
 
     let f = File::create(path).expect("Can't create new trk file.");
     let mut writer = BufWriter::new(f);
