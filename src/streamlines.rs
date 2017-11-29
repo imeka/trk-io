@@ -7,13 +7,14 @@ use nalgebra::{RowVector3};
 use {Affine, Translation};
 
 pub type Point = RowVector3<f32>;
+pub type Points = Vec<Point>;
 
 pub struct Streamlines {
     pub affine: Affine,
     pub translation: Translation,
     pub lengths: Vec<usize>,
     pub offsets: Vec<usize>,
-    pub data: Vec<Point>,
+    pub data: Points,
 }
 
 impl<'a> IntoIterator for &'a Streamlines {
@@ -62,7 +63,7 @@ impl Streamlines {
         affine: Affine,
         translation: Translation,
         lengths: Vec<usize>,
-        m: Vec<Point>
+        m: Points
     ) -> Streamlines {
         // CumSum over lengths
         let mut offsets = Vec::with_capacity(lengths.len() + 1);
