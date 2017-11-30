@@ -108,3 +108,35 @@ fn test_load_complex() {
                                 Point::new(9.0, 10.0, 11.0),
                                 Point::new(12.0, 13.0, 14.0)]);
 }
+
+#[test]
+fn test_load_complex_big_endian() {
+    let first = [Point::new(0.0, 1.0, 2.0)];
+    let second = [Point::new(0.0, 1.0, 2.0), Point::new(3.0, 4.0, 5.0)];
+    let third = [Point::new(0.0, 1.0, 2.0),
+                 Point::new(3.0, 4.0, 5.0),
+                 Point::new(6.0, 7.0, 8.0),
+                 Point::new(9.0, 10.0, 11.0),
+                 Point::new(12.0, 13.0, 14.0)];
+
+    let mut reader = Reader::new("data/complex_big_endian.trk");
+    let streamlines = reader.read_all();
+    assert_eq!(streamlines.len(), 3);
+    assert_eq!(streamlines[0], first);
+    assert_eq!(streamlines[1], second);
+    assert_eq!(streamlines[2], third);
+
+    // Test generator
+    for (i, streamline) in Reader::new(
+            "data/complex_big_endian.trk").into_iter().enumerate() {
+        if i == 0 {
+            assert_eq!(streamline, first);
+        } else if i == 1 {
+            assert_eq!(streamline, second);
+        } else if i == 2 {
+            assert_eq!(streamline, third);
+        } else {
+            panic!("Failed test.");
+        }
+    }
+}
