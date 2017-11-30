@@ -1,7 +1,8 @@
 
 use byteorder::{WriteBytesExt};
 
-use {Affine, CHeader, Translation};
+use {Affine, Translation};
+use cheader::{CHeader, Endianness};
 
 #[derive(Clone)]
 pub struct Header {
@@ -14,8 +15,8 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn read(path: &str) -> Header {
-        let c_header = CHeader::read(path);
+    pub fn read(path: &str) -> (Header, Endianness) {
+        let (c_header, endianness) = CHeader::read(path);
         let (affine, translation) = c_header.get_affine();
         let nb_streamlines = c_header.n_count as usize;
 
@@ -29,10 +30,11 @@ impl Header {
             properties_name.push(c_header.get_property(i));
         }
 
-        Header {
+        let header = Header {
             c_header, affine, translation, nb_streamlines,
             scalars_name, properties_name
-        }
+        };
+        (header, endianness)
     }
 
     pub fn write<W: WriteBytesExt>(&self, writer: &mut W) {

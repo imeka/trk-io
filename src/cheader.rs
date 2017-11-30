@@ -1,15 +1,28 @@
 
+use std::fmt;
 use std::fs::{File};
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom};
 use std::slice::from_raw_parts;
 use std::str::from_utf8;
 
-use byteorder::{WriteBytesExt};
+use byteorder::{BigEndian, ByteOrder, LittleEndian,
+                ReadBytesExt, WriteBytesExt};
 use nalgebra::{U3, Vector4};
 
 use {Affine, Affine4, Translation};
 use orientation::{affine_to_axcodes, axcodes_to_orientations,
                   inverse_orientations_affine, orientations_transform};
+
+pub enum Endianness { Little, Big }
+
+impl fmt::Display for Endianness {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Endianness::Little => write!(f, "<"),
+            Endianness::Big => write!(f, ">")
+        }
+    }
+}
 
 // http://www.trackvis.org/docs/?subsect=fileformat
 #[derive(Clone)]
@@ -111,21 +124,55 @@ impl CHeader {
         (affine, translation)
     }
 
-    pub fn read(path: &str) -> CHeader {
+    pub fn read(path: &str) -> (CHeader, Endianness) {
         let f = File::open(path).expect("Can't read trk file.");
         let mut reader = BufReader::new(f);
-        unsafe {
-            let mut s = ::std::mem::uninitialized();
-            let buffer = ::std::slice::from_raw_parts_mut(
-                &mut s as *mut _ as *mut u8, HEADER_SIZE);
-            match reader.read_exact(buffer) {
-                Ok(()) => s,
-                Err(_) => {
-                    ::std::mem::forget(s);
-                    panic!("Can't read header from trk file.");
-                }
-            }
+        let endianness = test_endianness(&mut reader);
+        let header = match endianness {
+            Endianness::Little => CHeader::read_::<LittleEndian>(&mut reader),
+            Endianness::Big => CHeader::read_::<BigEndian>(&mut reader)
+        };
+        (header, endianness)
+    }
+
+    fn read_<E: ByteOrder>(reader: &mut BufReader<File>) -> CHeader {
+        let mut header = CHeader::default();
+
+        reader.read_exact(&mut header.id_string).unwrap();
+        for i in &mut header.dim {
+            *i = reader.read_i16::<E>().unwrap();
         }
+        for f in &mut header.voxel_size {
+            *f = reader.read_f32::<E>().unwrap();
+        }
+        for f in &mut header.origin {
+            *f = reader.read_f32::<E>().unwrap();
+        }
+        header.n_scalars = reader.read_i16::<E>().unwrap();
+        reader.read_exact(&mut header.scalar_name).unwrap();
+        header.n_properties = reader.read_i16::<E>().unwrap();
+        reader.read_exact(&mut header.property_name).unwrap();
+        for f in &mut header.vox_to_ras {
+            *f = reader.read_f32::<E>().unwrap();
+        }
+        reader.read_exact(&mut header.reserved).unwrap();
+        reader.read_exact(&mut header.voxel_order).unwrap();
+        reader.read_exact(&mut header.pad2).unwrap();
+        for f in &mut header.image_orientation_patient {
+            *f = reader.read_f32::<E>().unwrap();
+        }
+        reader.read_exact(&mut header.pad1).unwrap();
+        header.invert_x = reader.read_u8().unwrap();
+        header.invert_y = reader.read_u8().unwrap();
+        header.invert_z = reader.read_u8().unwrap();
+        header.swap_x = reader.read_u8().unwrap();
+        header.swap_y = reader.read_u8().unwrap();
+        header.swap_z = reader.read_u8().unwrap();
+        header.n_count = reader.read_i32::<E>().unwrap();
+        header.version = reader.read_i32::<E>().unwrap();
+        header.hdr_size = reader.read_i32::<E>().unwrap();
+
+        header
     }
 
     pub fn write<W: WriteBytesExt>(&self, writer: &mut W) {
@@ -174,4 +221,25 @@ impl Default for CHeader {
             hdr_size: HEADER_SIZE as i32
         }
     }
+}
+
+/// Returns the endianness used when saving the trk file read by `reader`
+/// 
+/// We use `version` to discover the endianness because it's the biggest
+/// integer field with the most constrained possible values {1, 2}.
+/// Read in LittleEndian, version == 1 or 2.
+/// Read in BigEndian, version == 511 or 767
+/// Even with hundreds major updates, `version` should be safe.
+fn test_endianness(reader: &mut BufReader<File>) -> Endianness {
+    let version_offset = (HEADER_SIZE - 8) as u64;
+    reader.seek(SeekFrom::Start(version_offset)).unwrap();
+    let version = reader.read_i32::<LittleEndian>().unwrap();
+    let endianness = if version <= 255 {
+        Endianness::Little
+    } else {
+        Endianness::Big
+    };
+    reader.seek(SeekFrom::Start(0)).unwrap();
+
+    endianness
 }

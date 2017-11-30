@@ -2,12 +2,14 @@
 use std::fs::{File};
 use std::io::BufReader;
 
-use byteorder::{LittleEndian, ReadBytesExt};
+use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 
-use {Affine, CHeader, Header, Point, Points, Streamlines, Translation};
+use {Affine, Header, Point, Points, Streamlines, Translation};
+use cheader::{CHeader, Endianness};
 
 pub struct Reader {
     reader: BufReader<File>,
+    endianness: Endianness,
     pub header: Header,
     pub affine: Affine,
     pub translation: Translation,
@@ -18,7 +20,7 @@ pub struct Reader {
 
 impl Reader {
     pub fn new(path: &str) -> Reader {
-        let header = Header::read(path);
+        let (header, endianness) = Header::read(path);
         let affine = header.affine;
         let translation = header.translation;
         let nb_floats_per_point = 3 + header.scalars_name.len() as usize;
@@ -28,33 +30,43 @@ impl Reader {
 
         Reader {
             reader: BufReader::new(f),
-            header, affine, translation,
-            nb_floats_per_point,
+            endianness, header, affine, translation, nb_floats_per_point,
             float_buffer: Vec::with_capacity(300)
         }
     }
 
     pub fn read_all(&mut self) -> Streamlines {
+        match self.endianness {
+            Endianness::Little => self.read_all_::<LittleEndian>(),
+            Endianness::Big => self.read_all_::<BigEndian>()
+        }
+    }
+
+    fn read_all_<E: ByteOrder>(&mut self) -> Streamlines {
         let mut lengths = Vec::new();
         let mut v = Vec::with_capacity(300);
         loop {
-            if let Ok(nb_points) = self.reader.read_i32::<LittleEndian>() {
+            if let Ok(nb_points) = self.reader.read_i32::<E>() {
                 lengths.push(nb_points as usize);
-                self.read_streamline(&mut v, nb_points as usize);
+                self.read_streamline::<E>(&mut v, nb_points as usize);
+            } else  {
+                break;
             }
-            else { break; }
         }
-
         Streamlines::new(lengths, v)
     }
 
-    fn read_streamline(&mut self, points: &mut Points, nb_points: usize) {
+    fn read_streamline<E: ByteOrder>(
+        &mut self,
+        points: &mut Points,
+        nb_points: usize)
+    {
         // Vec::resize never decreases capacity, it can only increase it
         // so there won't be any useless allocation.
         let nb_floats = nb_points * self.nb_floats_per_point;
         self.float_buffer.resize(nb_floats as usize, 0.0);
         unsafe {
-            self.reader.read_f32_into_unchecked::<LittleEndian>(
+            self.reader.read_f32_into_unchecked::<E>(
                 self.float_buffer.as_mut_slice()).unwrap();
         }
 
@@ -65,7 +77,7 @@ impl Reader {
 
         // Ignore properties for now
         for _ in 0..self.header.properties_name.len() {
-            self.reader.read_f32::<LittleEndian>().unwrap();
+            self.reader.read_f32::<E>().unwrap();
         }
     }
 }
@@ -74,9 +86,17 @@ impl Iterator for Reader {
     type Item = Points;
 
     fn next(&mut self) -> Option<Points> {
-        if let Ok(nb_points) = self.reader.read_i32::<LittleEndian>() {
+        if let Ok(nb_points) = match self.endianness {
+            Endianness::Little => self.reader.read_i32::<LittleEndian>(),
+            Endianness::Big => self.reader.read_i32::<BigEndian>()
+        } {
             let mut points = Vec::with_capacity(nb_points as usize);
-            self.read_streamline(&mut points, nb_points as usize);
+            match self.endianness {
+                Endianness::Little => self.read_streamline::<LittleEndian>(
+                    &mut points, nb_points as usize),
+                Endianness::Big => self.read_streamline::<BigEndian>(
+                    &mut points, nb_points as usize)
+            };
             Some(points)
         } else {
             None

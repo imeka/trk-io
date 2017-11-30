@@ -32,7 +32,8 @@ fn main() {
     let input = input.to_str()
         .expect("Your input path contains non-UTF-8 cahracters");
 
-    let header = CHeader::read(input);
+    let (header, endianness) = CHeader::read(input);
+    println!("Endianness {}   (not an actual field)", endianness);
     println!("id_string: {:?} ({})",
         header.id_string,
         str::from_utf8(&header.id_string).unwrap());
