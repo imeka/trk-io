@@ -5,15 +5,30 @@ use std::slice::from_raw_parts;
 use std::str::from_utf8;
 
 use byteorder::{WriteBytesExt};
-use nalgebra::{RowVector3, U3, Vector4};
+use nalgebra::{U3, Vector4};
 
 use {Affine, Affine4, Translation};
 use orientation::{affine_to_axcodes, axcodes_to_orientations,
                   inverse_orientations_affine, orientations_transform};
 
+pub struct Header {
+    c_header: CHeader,
+    pub affine: Affine,
+    pub translation: Translation,
+    pub nb_streamlines: usize,
+    pub scalars_name: Vec<String>,
+    pub properties_name: Vec<String>
+}
+
+impl Header {
+    pub fn write<W: WriteBytesExt>(&self, writer: &mut W) {
+        self.c_header.write(writer);
+    }
+}
+
 // http://www.trackvis.org/docs/?subsect=fileformat
 #[repr(C, packed)]
-pub struct Header {
+pub struct CHeader {
     pub id_string: [u8; 6],
     pub dim: [i16; 3],                              // *
     pub voxel_size: [f32; 3],                       // *
@@ -43,9 +58,9 @@ pub struct Header {
 // use std::mem::size_of;
 pub const HEADER_SIZE: usize = 1000;
 
-impl Default for Header {
-    fn default() -> Header {
-         Header {
+impl Default for CHeader {
+    fn default() -> CHeader {
+         CHeader {
             id_string: *b"TRACK\0",
             dim: [1, 1, 1],
             voxel_size: [1.0, 1.0, 1.0],
@@ -72,25 +87,25 @@ impl Default for Header {
     }
 }
 
-impl Header {
-    pub fn get_scalar(&self, i: usize) -> &str {
+impl CHeader {
+    pub fn get_scalar(&self, i: usize) -> String {
         if i >= 10 {
             panic!("There's no more than {} scalars", i);
         }
         let min_ = i * 20;
         let max_ = min_ + 10;
         let name = &self.scalar_name[min_..max_];
-        from_utf8(name).expect("get_scalar failed")
+        from_utf8(name).expect("get_scalar failed").to_string()
     }
 
-    pub fn get_property(&self, i: usize) -> &str {
+    pub fn get_property(&self, i: usize) -> String {
         if i >= 10 {
             panic!("There's no more than {} properties", i);
         }
         let min_ = i * 20;
         let max_ = min_ + 10;
         let name = &self.property_name[min_..max_];
-        from_utf8(name).expect("get_property failed")
+        from_utf8(name).expect("get_property failed").to_string()
     }
 
     pub fn get_affine(&self) -> (Affine, Translation) {
@@ -124,7 +139,7 @@ impl Header {
 
         affine = voxel_to_rasmm * affine;
 
-        let translation = RowVector3::new(
+        let translation = Translation::new(
             affine[12], affine[13], affine[14]);
         let affine = affine.fixed_slice::<U3, U3>(0, 0).into_owned();
         (affine, translation)
@@ -132,13 +147,13 @@ impl Header {
 
     pub fn write<W: WriteBytesExt>(&self, writer: &mut W) {
         let bytes = unsafe {
-            from_raw_parts(self as *const Header as *const u8, HEADER_SIZE)
+            from_raw_parts(self as *const CHeader as *const u8, HEADER_SIZE)
         };
         writer.write(bytes).unwrap();
     }
 }
 
-pub fn read_header(path: &str) -> Header {
+pub fn read_c_header(path: &str) -> CHeader {
     let f = File::open(path).expect("Can't read trk file.");
     let mut reader = BufReader::new(f);
     unsafe {
@@ -152,5 +167,26 @@ pub fn read_header(path: &str) -> Header {
                 panic!("Can't read header from trk file.");
             }
         }
+    }
+}
+
+pub fn read_header(path: &str) -> Header {
+    let c_header = read_c_header(path);
+    let (affine, translation) = c_header.get_affine();
+    let nb_streamlines = c_header.n_count as usize;
+
+    let mut scalars_name = Vec::with_capacity(c_header.n_scalars as usize);
+    for i in 0..scalars_name.capacity() {
+        scalars_name.push(c_header.get_scalar(i));
+    }
+
+    let mut properties_name = Vec::with_capacity(c_header.n_properties as usize);
+    for i in 0..properties_name.capacity() {
+        properties_name.push(c_header.get_property(i));
+    }
+
+    Header {
+        c_header, affine, translation, nb_streamlines,
+        scalars_name, properties_name
     }
 }

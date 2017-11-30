@@ -1,8 +1,7 @@
 
 extern crate trk_io;
 
-use trk_io::{Affine, Translation};
-use trk_io::streamlines::Point;
+use trk_io::{Affine, Point, Translation};
 use trk_io::trk::Reader;
 
 #[test]
@@ -52,11 +51,12 @@ fn test_load_simple() {
 
 #[test]
 fn test_load_standard() {
-    let streamlines = Reader::new("data/standard.trk").read_all();
-    assert_eq!(streamlines.affine, Affine::new(1.0, 0.0, 0.0,
-                                               0.0, 1.0, 0.0,
-                                               0.0, 0.0, 1.0));
-    assert_eq!(streamlines.translation, Translation::new(-0.5, -1.5, -1.0));
+    let mut reader = Reader::new("data/standard.trk");
+    let streamlines = reader.read_all();
+    assert_eq!(reader.affine, Affine::new(1.0, 0.0, 0.0,
+                                          0.0, 1.0, 0.0,
+                                          0.0, 0.0, 1.0));
+    assert_eq!(reader.translation, Translation::new(-0.5, -1.5, -1.0));
 
     assert_eq!(streamlines.len(), 120);
     assert_eq!(streamlines[0], [Point::new(-0.5, -1.5, 1.0),
@@ -74,11 +74,12 @@ fn test_load_standard() {
 
 #[test]
 fn test_load_standard_lps() {
-    let streamlines = Reader::new("data/standard.LPS.trk").read_all();
-    assert_eq!(streamlines.affine, Affine::new(-1.0, 0.0, 0.0,
-                                               0.0, -1.0, 0.0,
-                                               0.0, 0.0, 1.0));
-    assert_eq!(streamlines.translation, Translation::new(3.5, 13.5, -1.0));
+    let mut reader = Reader::new("data/standard.LPS.trk");
+    let streamlines = reader.read_all();
+    assert_eq!(reader.affine, Affine::new(-1.0, 0.0, 0.0,
+                                          0.0, -1.0, 0.0,
+                                          0.0, 0.0, 1.0));
+    assert_eq!(reader.translation, Translation::new(3.5, 13.5, -1.0));
 
     assert_eq!(streamlines.len(), 120);
     assert_eq!(streamlines[0], [Point::new(-0.5, -1.5, 1.0),
@@ -91,11 +92,12 @@ fn test_load_standard_lps() {
 
 #[test]
 fn test_load_complex() {
-    let streamlines = Reader::new("data/complex.trk").read_all();
-    assert_eq!(streamlines.affine, Affine::new(1.0, 0.0, 0.0,
-                                               0.0, 1.0, 0.0,
-                                               0.0, 0.0, 1.0));
-    assert_eq!(streamlines.translation, Translation::new(-0.5, -0.5, -0.5));
+    let mut reader = Reader::new("data/complex.trk");
+    let streamlines = reader.read_all();
+    assert_eq!(reader.affine, Affine::new(1.0, 0.0, 0.0,
+                                          0.0, 1.0, 0.0,
+                                          0.0, 0.0, 1.0));
+    assert_eq!(reader.translation, Translation::new(-0.5, -0.5, -0.5));
 
     assert_eq!(streamlines.len(), 3);
     assert_eq!(streamlines[0], [Point::new(0.0, 1.0, 2.0)]);

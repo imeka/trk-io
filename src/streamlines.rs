@@ -2,10 +2,7 @@
 use std::ops::Index;
 use std::vec::Vec;
 
-use nalgebra::{RowVector3};
-
-pub type Point = RowVector3<f32>;
-pub type Points = Vec<Point>;
+use {Point, Points};
 
 pub struct Streamlines {
     pub lengths: Vec<usize>,
