@@ -4,6 +4,7 @@ use std::vec::Vec;
 
 use {Point, Points};
 
+#[derive(Clone, PartialEq)]
 pub struct Streamlines {
     pub lengths: Vec<usize>,
     pub offsets: Vec<usize>,

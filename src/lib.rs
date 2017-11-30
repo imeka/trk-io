@@ -1,13 +1,20 @@
 
-extern crate nalgebra;
 extern crate byteorder;
+extern crate nalgebra;
 
-pub mod header;
+mod cheader;
+mod header;
 mod orientation;
-pub mod streamlines;
-pub mod trk;
+mod reader;
+mod streamlines;
+mod writer;
 
 use nalgebra::{Matrix3, Matrix4, RowVector3};
+pub use cheader::CHeader;
+pub use header::Header;
+pub use reader::Reader;
+pub use streamlines::Streamlines;
+pub use writer::Writer;
 
 pub type Dimension = RowVector3<usize>;
 pub type Point = RowVector3<f32>;

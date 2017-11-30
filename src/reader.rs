@@ -1,12 +1,10 @@
 
 use std::fs::{File};
-use std::io::{BufReader, Seek, SeekFrom};
+use std::io::BufReader;
 
 use byteorder::{LittleEndian, ReadBytesExt};
 
-use {Affine, Point, Points, Translation};
-use header::{Header, HEADER_SIZE, read_header};
-use streamlines::{Streamlines};
+use {Affine, CHeader, Header, Point, Points, Streamlines, Translation};
 
 pub struct Reader {
     reader: BufReader<File>,
@@ -20,13 +18,13 @@ pub struct Reader {
 
 impl Reader {
     pub fn new(path: &str) -> Reader {
-        let header = read_header(path);
+        let header = Header::read(path);
         let affine = header.affine;
         let translation = header.translation;
         let nb_floats_per_point = 3 + header.scalars_name.len() as usize;
 
         let mut f = File::open(path).expect("Can't read trk file.");
-        f.seek(SeekFrom::Start(HEADER_SIZE as u64)).unwrap();
+        CHeader::seek_end(&mut f);
 
         Reader {
             reader: BufReader::new(f),

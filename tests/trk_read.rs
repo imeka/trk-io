@@ -1,8 +1,7 @@
 
 extern crate trk_io;
 
-use trk_io::{Affine, Point, Translation};
-use trk_io::trk::Reader;
+use trk_io::{Affine, Point, Reader, Translation};
 
 #[test]
 fn test_load_empty() {

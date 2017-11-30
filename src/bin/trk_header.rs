@@ -5,7 +5,7 @@ extern crate trk_io;
 use docopt::Docopt;
 use std::path::Path;
 use std::str;
-use trk_io::header::read_c_header;
+use trk_io::CHeader;
 
 static USAGE: &'static str = "
 Print a TrackVis (.trk) header in an readable form
@@ -32,7 +32,7 @@ fn main() {
     let input = input.to_str()
         .expect("Your input path contains non-UTF-8 cahracters");
 
-    let header = read_c_header(input);
+    let header = CHeader::read(input);
     println!("id_string: {:?} ({})",
         header.id_string,
         str::from_utf8(&header.id_string).unwrap());
