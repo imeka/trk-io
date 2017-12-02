@@ -20,15 +20,10 @@ impl Header {
         let (affine, translation) = c_header.get_affine();
         let nb_streamlines = c_header.n_count as usize;
 
-        let mut scalars_name = Vec::with_capacity(c_header.n_scalars as usize);
-        for i in 0..scalars_name.capacity() {
-            scalars_name.push(c_header.get_scalar(i));
-        }
-
-        let mut properties_name = Vec::with_capacity(c_header.n_properties as usize);
-        for i in 0..properties_name.capacity() {
-            properties_name.push(c_header.get_property(i));
-        }
+        let scalars_name = (0..c_header.n_scalars as usize).map(
+            |i| c_header.get_scalar(i)).collect();
+        let properties_name = (0..c_header.n_properties as usize).map(
+            |i| c_header.get_property(i)).collect();
 
         let header = Header {
             c_header, affine, translation, nb_streamlines,
