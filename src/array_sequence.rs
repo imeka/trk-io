@@ -55,14 +55,13 @@ impl<T> ArraySequence<T> {
         lengths: Vec<usize>,
         data: Vec<T>
     ) -> ArraySequence<T> {
-        // CumSum over lengths
-        let mut offsets = Vec::with_capacity(lengths.len() + 1);
-        let mut sum = 0;
-        for length in &lengths {
-            offsets.push(sum);
-            sum = sum + length;
-        }
-        offsets.push(sum);
+        // CumSum over lengths. [0, ..., ..., data.len()]
+        // There's an additional offset at the end because we want a
+        // branchless `Index<usize>` function.
+        let offsets = [0].iter().chain(&lengths).scan(0, |state, x| {
+            *state += *x;
+            Some(*state)
+        }).collect();
 
         ArraySequence { lengths, offsets, data: data }
     }
