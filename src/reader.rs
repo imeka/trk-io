@@ -73,6 +73,7 @@ impl Reader {
         for floats in self.float_buffer.chunks(self.nb_floats_per_point) {
             let p = Point::new(floats[0], floats[1], floats[2]);
             points.push((p * self.affine) + self.translation);
+            //println!("{} {} {} {}", floats[3], floats[4], floats[5], floats[6])
         }
 
         // Ignore properties for now
