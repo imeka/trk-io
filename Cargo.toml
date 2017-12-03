@@ -3,6 +3,13 @@ name = "trk-io"
 version = "0.1.0"
 authors = ["Nil Goyette <nil.goyette@imeka.ca>"]
 
+description = "TrackVis (*.trk) reader and writer"
+repository = "https://github.com/imeka/trk-io"
+readme = "README.rst"
+keywords = ["diffusion-mri", "trackvis", "trk"]
+categories = ["data-structures", "science"]
+license = "BSD-2-Clause"
+
 [dependencies]
 byteorder = "1.2.1"
 docopt = "0.8.1"
