@@ -44,8 +44,8 @@ impl<T> Index<usize> for ArraySequence<T> {
     type Output = [T];
 
     fn index<'a>(&'a self, i: usize) -> &'a Self::Output {
-        let start = self.offsets[i];
-        let end = self.offsets[i + 1];
+        let start = unsafe { *self.offsets.get_unchecked(i) };
+        let end = unsafe { *self.offsets.get_unchecked(i + 1) };
         &self.data[start..end]
     }
 }
