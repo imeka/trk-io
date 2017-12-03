@@ -26,9 +26,8 @@ TODOs
 - Still missing a writing test for Endianness.
 - Handle colors. Can read a colored file but will ignore the color information.
   Idem for all scalars and properties.
-- Publish on ``crates.io``.
 - Open trk file only once.
 - Remove ``Streamlines::lengths`` as it seems only ``offsets`` is required.
 - Create some binary tools using this lib, e.g. show_affine, count_tracks,
-  pruning, strip_info, etc.
+  pruning, strip_info, color, etc.
 - Support for ``ops.Range``, e.g. ``streamlines[0..10]``
