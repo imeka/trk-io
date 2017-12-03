@@ -5,7 +5,7 @@ authors = ["Nil Goyette <nil.goyette@imeka.ca>"]
 
 description = "TrackVis (*.trk) reader and writer"
 repository = "https://github.com/imeka/trk-io"
-readme = "README.rst"
+readme = "README-crates.io.md"
 keywords = ["diffusion-mri", "trackvis", "trk"]
 categories = ["data-structures", "science"]
 license = "BSD-2-Clause"
