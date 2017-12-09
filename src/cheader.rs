@@ -71,7 +71,7 @@ impl CHeader {
             panic!("There's no more than {} scalars", i);
         }
         let min_ = i * 20;
-        let max_ = min_ + 10;
+        let max_ = min_ + 20;
         let name = &self.scalar_name[min_..max_];
         from_utf8(name).expect("get_scalar failed").to_string()
     }
@@ -81,7 +81,7 @@ impl CHeader {
             panic!("There's no more than {} properties", i);
         }
         let min_ = i * 20;
-        let max_ = min_ + 10;
+        let max_ = min_ + 20;
         let name = &self.property_name[min_..max_];
         from_utf8(name).expect("get_property failed").to_string()
     }
