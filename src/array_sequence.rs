@@ -51,6 +51,10 @@ impl<T> Index<usize> for ArraySequence<T> {
 }
 
 impl<T> ArraySequence<T> {
+    pub fn empty() -> ArraySequence<T> {
+        ArraySequence { lengths: vec![], offsets: vec![0], data: vec![] }
+    }
+
     pub fn new(
         lengths: Vec<usize>,
         data: Vec<T>
@@ -64,6 +68,22 @@ impl<T> ArraySequence<T> {
         }).collect();
 
         ArraySequence { lengths, offsets, data: data }
+    }
+
+    pub fn push(&mut self, val: T) {
+        self.data.push(val);
+    }
+
+    pub fn end_push(&mut self) {
+        self.lengths.push(self.data.len() - self.offsets.last().unwrap());
+        self.offsets.push(self.data.len());
+    }
+
+    pub fn extend<I>(&mut self, iter: I)
+        where I: IntoIterator<Item = T>
+    {
+        self.data.extend(iter);
+        self.end_push();
     }
 
     pub fn len(&self) -> usize {
@@ -119,5 +139,23 @@ mod tests {
                     Point::new(0.0, 2.0, 0.0),
                     Point::new(0.0, 3.0, 0.0)]);
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_dynamic() {
+        let mut arr = ArraySequence::empty();
+        for i in 0..10 {
+            arr.push(i);
+        }
+        arr.end_push();
+
+        assert_eq!(arr.len(), 1);
+        assert_eq!(arr.lengths, vec![10]);
+        assert_eq!(arr.offsets, vec![0, 10]);
+
+        arr.extend(vec![11, 12, 13, 14, 15]);
+        assert_eq!(arr.len(), 2);
+        assert_eq!(arr.lengths, vec![10, 5]);
+        assert_eq!(arr.offsets, vec![0, 10, 15]);
     }
 }
