@@ -45,13 +45,9 @@ impl Reader {
     fn read_all_<E: ByteOrder>(&mut self) -> Streamlines {
         let mut lengths = Vec::new();
         let mut v = Vec::with_capacity(300);
-        loop {
-            if let Ok(nb_points) = self.reader.read_i32::<E>() {
-                lengths.push(nb_points as usize);
-                self.read_streamline::<E>(&mut v, nb_points as usize);
-            } else  {
-                break;
-            }
+        while let Ok(nb_points) = self.reader.read_i32::<E>() {
+            lengths.push(nb_points as usize);
+            self.read_streamline::<E>(&mut v, nb_points as usize);
         }
         Streamlines::new(lengths, v)
     }
