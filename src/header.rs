@@ -1,8 +1,11 @@
 
 use byteorder::{WriteBytesExt};
 
-use {Affine, Translation};
+use {Affine, ArraySequence, Translation};
 use cheader::{CHeader, Endianness};
+
+type Scalar = (String, ArraySequence<f32>);
+type Property = (String, Vec<f32>);
 
 #[derive(Clone)]
 pub struct Header {
@@ -10,8 +13,9 @@ pub struct Header {
     pub affine: Affine,
     pub translation: Translation,
     pub nb_streamlines: usize,
-    pub scalars_name: Vec<String>,
-    pub properties_name: Vec<String>
+
+    pub scalars: Vec<Scalar>,
+    pub properties: Vec<Property>
 }
 
 impl Header {
@@ -19,15 +23,15 @@ impl Header {
         let (c_header, endianness) = CHeader::read(path);
         let (affine, translation) = c_header.get_affine();
         let nb_streamlines = c_header.n_count as usize;
-
-        let scalars_name = (0..c_header.n_scalars as usize).map(
-            |i| c_header.get_scalar(i)).collect();
-        let properties_name = (0..c_header.n_properties as usize).map(
-            |i| c_header.get_property(i)).collect();
+        let scalars = c_header.get_scalars_name().into_iter().map(
+            |scalar| (scalar, ArraySequence::empty())
+        ).collect();
+        let properties = c_header.get_properties_name().into_iter().map(
+            |property| (property, vec![])
+        ).collect();
 
         let header = Header {
-            c_header, affine, translation, nb_streamlines,
-            scalars_name, properties_name
+            c_header, affine, translation, nb_streamlines, scalars, properties
         };
         (header, endianness)
     }
@@ -44,8 +48,8 @@ impl Default for Header {
             affine: Affine::identity(),
             translation: Translation::zeros(),
             nb_streamlines: 0,
-            scalars_name: vec![],
-            properties_name: vec![]
+            scalars: vec![],
+            properties: vec![]
         }
     }
 }
@@ -55,7 +59,7 @@ impl PartialEq for Header {
         self.affine == other.affine &&
         self.translation == other.translation &&
         self.nb_streamlines == other.nb_streamlines &&
-        self.scalars_name == other.scalars_name &&
-        self.properties_name == other.properties_name
+        self.scalars == other.scalars &&
+        self.properties == other.properties
     }
 }

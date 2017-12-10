@@ -40,7 +40,8 @@ impl Writer {
     }
 
     pub fn write(&mut self, streamline: &[Point]) {
-        self.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
+        self.writer.write_i32::<LittleEndian>(
+            streamline.len() as i32).unwrap();
         for p in streamline {
             let p = (p - self.translation) * self.affine;
             self.writer.write_f32::<LittleEndian>(p.x).unwrap();
