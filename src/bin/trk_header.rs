@@ -41,12 +41,12 @@ fn main() {
     println!("voxel_size: {:?}", header.voxel_size);
     println!("origin: {:?}", header.origin);
     println!("n_scalars: {:?}", header.n_scalars);
-    for i in 0..header.n_scalars {
-        println!("  {}: {}",i, header.get_scalar(i as usize));
+    for (i, scalar_name) in header.get_scalars_name().iter().enumerate() {
+        println!("  {}: {}", i, scalar_name);
     }
     println!("n_properties: {:?}", header.n_properties);
-    for i in 0..header.n_properties {
-        println!("  {}: {}", i, header.get_property(i as usize));
+    for (i, property_name) in header.get_properties_name().iter().enumerate() {
+        println!("  {}: {}", i, property_name);
     }
     println!("vox_to_ras: {:?}", &header.vox_to_ras[0..4]);
     println!("            {:?}", &header.vox_to_ras[4..8]);

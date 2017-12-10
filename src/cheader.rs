@@ -67,24 +67,12 @@ impl CHeader {
         f.seek(SeekFrom::Start(HEADER_SIZE as u64)).unwrap();
     }
 
-    pub fn get_scalar(&self, i: usize) -> String {
-        if i >= 10 {
-            panic!("There's no more than {} scalars", i);
-        }
-        let min_ = i * 20;
-        let max_ = min_ + 20;
-        let name = &self.scalar_name[min_..max_];
-        from_utf8(name).expect("get_scalar failed").to_string()
+    pub fn get_scalars_name(&self) -> Vec<String> {
+        read_names(&self.scalar_name, self.n_scalars as usize)
     }
 
-    pub fn get_property(&self, i: usize) -> String {
-        if i >= 10 {
-            panic!("There's no more than {} properties", i);
-        }
-        let min_ = i * 20;
-        let max_ = min_ + 20;
-        let name = &self.property_name[min_..max_];
-        from_utf8(name).expect("get_property failed").to_string()
+    pub fn get_properties_name(&self) -> Vec<String> {
+        read_names(&self.property_name, self.n_properties as usize)
     }
 
     pub fn get_affine(&self) -> (Affine, Translation) {
@@ -242,4 +230,33 @@ fn test_endianness(reader: &mut BufReader<File>) -> Endianness {
     reader.seek(SeekFrom::Start(0)).unwrap();
 
     endianness
+}
+
+fn read_names(names_bytes: &[u8], nb: usize) -> Vec<String> {
+    if nb == 0 {
+        return vec![];
+    }
+
+    let mut names = Vec::with_capacity(nb);
+    for names_byte in names_bytes.chunks(20) {
+        for (i, b) in names_byte.iter().enumerate() {
+            if *b == 0u8 {
+                let name = from_utf8(&names_byte[..i]).unwrap().to_string();
+                if names_byte[i + 1] == 0u8 {
+                    // Normal case where: name\0\0...
+                    names.push(name);
+                } else {
+                    // Special case where: name\0{number}\0\0...
+                    let number = names_byte[i + 1] - 48;
+                    for _ in 0..number {
+                        names.push(name.clone());
+                    }
+                }
+                break;
+            }
+        }
+        if names.len() == nb { break; }
+    }
+
+    names
 }
