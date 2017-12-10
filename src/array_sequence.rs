@@ -75,8 +75,11 @@ impl<T> ArraySequence<T> {
     }
 
     pub fn end_push(&mut self) {
-        self.lengths.push(self.data.len() - self.offsets.last().unwrap());
-        self.offsets.push(self.data.len());
+        let nb = self.data.len() - self.offsets.last().unwrap();
+        if nb > 0 {
+            self.lengths.push(nb);
+            self.offsets.push(self.data.len());
+        }
     }
 
     pub fn extend<I>(&mut self, iter: I)
@@ -157,5 +160,20 @@ mod tests {
         assert_eq!(arr.len(), 2);
         assert_eq!(arr.lengths, vec![10, 5]);
         assert_eq!(arr.offsets, vec![0, 10, 15]);
+    }
+
+    #[test]
+    fn test_empty_push() {
+        let mut arr = ArraySequence::<f64>::empty();
+        assert_eq!(arr.len(), 0);
+        assert_eq!(arr.lengths, vec![]);
+        assert_eq!(arr.offsets, vec![0]);
+
+        // An `end_push` without any `push` should do nothing
+        arr.end_push();
+
+        assert_eq!(arr.len(), 0);
+        assert_eq!(arr.lengths, vec![]);
+        assert_eq!(arr.offsets, vec![0]);
     }
 }
