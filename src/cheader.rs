@@ -26,6 +26,7 @@ impl fmt::Display for Endianness {
 
 // http://www.trackvis.org/docs/?subsect=fileformat
 #[derive(Clone)]
+#[repr(C)]
 pub struct CHeader {
     pub id_string: [u8; 6],
     pub dim: [i16; 3],                              // *
