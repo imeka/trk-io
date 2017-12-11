@@ -1,6 +1,6 @@
 [package]
 name = "trk-io"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Nil Goyette <nil.goyette@imeka.ca>"]
 
 description = "TrackVis (*.trk) reader and writer"
@@ -11,7 +11,7 @@ categories = ["data-structures", "science"]
 license = "BSD-2-Clause"
 
 [dependencies]
-byteorder = "1.2.1"
-docopt = "0.8.1"
-nalgebra = "0.13.1"
-tempdir = "0.3.5"
+byteorder = "1.1.0"
+docopt = "0.8.0"
+nalgebra = "0.13.0"
+tempdir = "0.3.0"
