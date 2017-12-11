@@ -65,8 +65,12 @@ impl Reader {
         // so there won't be any useless allocation.
         let nb_floats = nb_points * self.nb_floats_per_point;
         self.float_buffer.resize(nb_floats as usize, 0.0);
-        self.reader.read_f32_into_unchecked::<E>(
-            self.float_buffer.as_mut_slice()).unwrap();
+
+        // Not `unsafe` anymore in byteorder 1.2.1
+        unsafe {
+            self.reader.read_f32_into_unchecked::<E>(
+                self.float_buffer.as_mut_slice()).unwrap();
+        }
 
         for floats in self.float_buffer.chunks(self.nb_floats_per_point) {
             let p = Point::new(floats[0], floats[1], floats[2]);
