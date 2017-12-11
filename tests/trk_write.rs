@@ -2,6 +2,8 @@
 extern crate tempdir;
 extern crate trk_io;
 
+use std::iter::FromIterator;
+
 use tempdir::TempDir;
 
 use trk_io::{Affine, Header, Point, Reader, Streamlines, Writer};
@@ -15,6 +17,31 @@ fn get_random_trk_path() -> String {
 fn load_trk(path: &str) -> (Header, Streamlines) {
     let mut reader = Reader::new(path);
     (reader.header.clone(), reader.read_all())
+}
+
+#[test]
+fn test_write_dynamic() {
+    let write_to = get_random_trk_path();
+    let (original_header, original_streamlines) = load_trk("data/simple.trk");
+
+    {
+        let mut writer = Writer::new(&write_to, Some(original_header.clone()));
+        writer.write_from_iter(
+            [Point::new(0.0, 1.0, 2.0)].into_iter().cloned(), 1);
+
+        let v = vec![Point::new(0.0, 1.0, 2.0), Point::new(3.0, 4.0, 5.0)];
+        writer.write_from_iter(v, 2);
+
+        let v = Vec::from_iter((0..15));
+        let iter = v.chunks(3).map(
+            |ints| Point::new(ints[0] as f32, ints[1] as f32, ints[2] as f32)
+        );
+        writer.write_from_iter(iter, 5);
+    }
+
+    let (written_header, written_streamlines) = load_trk(&write_to);
+    assert!(original_header == written_header);
+    assert!(original_streamlines == written_streamlines);
 }
 
 #[test]

@@ -43,12 +43,26 @@ impl Writer {
         self.writer.write_i32::<LittleEndian>(
             streamline.len() as i32).unwrap();
         for p in streamline {
-            let p = (p - self.translation) * self.affine;
-            self.writer.write_f32::<LittleEndian>(p.x).unwrap();
-            self.writer.write_f32::<LittleEndian>(p.y).unwrap();
-            self.writer.write_f32::<LittleEndian>(p.z).unwrap();
+            self.write_point(*p);
         }
         self.real_n_count += 1;
+    }
+
+    pub fn write_from_iter<I>(&mut self, streamline: I, len: usize)
+        where I: IntoIterator<Item = Point>
+    {
+        self.writer.write_i32::<LittleEndian>(len as i32).unwrap();
+        for p in streamline {
+            self.write_point(p);
+        }
+        self.real_n_count += 1;
+    }
+
+    fn write_point(&mut self, p: Point) {
+        let p = (p - self.translation) * self.affine;
+        self.writer.write_f32::<LittleEndian>(p.x).unwrap();
+        self.writer.write_f32::<LittleEndian>(p.y).unwrap();
+        self.writer.write_f32::<LittleEndian>(p.z).unwrap();
     }
 }
 
