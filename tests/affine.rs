@@ -5,7 +5,8 @@ extern crate trk_io;
 #[cfg(feature = "use_nifti")]
 mod nifti_tests {
     use nifti::{InMemNiftiObject, NiftiObject};
-    use trk_io::{Affine, CHeader, Header, Translation};
+    use trk_io::{Affine, Affine4, CHeader, Header, Translation};
+    use trk_io::affine::{rasmm_to_trackvis, trackvis_to_rasmm};
 
     #[test]
     fn test_simple_header_from_nifti() {
@@ -52,5 +53,21 @@ mod nifti_tests {
         assert_eq!(header.nb_streamlines, 0);
         assert_eq!(header.scalars.len(), 0);
         assert_eq!(header.properties.len(), 0);
+    }
+
+    #[test]
+    fn test_complex_affine_from_nifti() {
+        let nifti_header = InMemNiftiObject::from_file("data/3x3.nii.gz")
+            .unwrap().header().clone();
+        assert_eq!(trackvis_to_rasmm(&nifti_header),
+                   Affine4::new(-1.0, 0.0, 0.0, 91.0,
+                                0.0, 1.0, 0.0, -127.0,
+                                0.0, 0.0, 1.0, -73.0,
+                                0.0, 0.0, 0.0, 1.0));
+        assert_eq!(rasmm_to_trackvis(&nifti_header),
+                   Affine4::new(-1.0, 0.0, 0.0, 91.0,
+                                0.0, 1.0, 0.0, 127.0,
+                                0.0, 0.0, 1.0, 73.0,
+                                0.0, 0.0, 0.0, 1.0));
     }
 }
