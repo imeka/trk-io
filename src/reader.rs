@@ -5,7 +5,7 @@ use std::io::BufReader;
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 
 use {Affine, Header, Point, Points, Streamlines, Translation};
-use cheader::{CHeader, Endianness};
+use cheader::{Endianness};
 
 pub struct Reader {
     reader: BufReader<File>,
@@ -20,18 +20,17 @@ pub struct Reader {
 
 impl Reader {
     pub fn new(path: &str) -> Reader {
-        let (header, endianness) = Header::read(path);
+        let f = File::open(path).expect("Can't read trk file.");
+        let mut reader = BufReader::new(f);
+
+        let (header, endianness) = Header::read(&mut reader);
         let affine = header.affine;
         let translation = header.translation;
         let nb_floats_per_point = 3 + header.scalars.len() as usize;
 
-        let mut f = File::open(path).expect("Can't read trk file.");
-        CHeader::seek_end(&mut f);
-
         Reader {
-            reader: BufReader::new(f),
-            endianness, header, affine, translation, nb_floats_per_point,
-            float_buffer: Vec::with_capacity(300)
+            reader, endianness, header, affine, translation,
+            nb_floats_per_point, float_buffer: Vec::with_capacity(300)
         }
     }
 

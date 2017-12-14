@@ -1,4 +1,7 @@
 
+use std::fs::{File};
+use std::io::{BufReader};
+
 use byteorder::{WriteBytesExt};
 
 use {Affine, ArraySequence, Translation};
@@ -19,8 +22,8 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn read(path: &str) -> (Header, Endianness) {
-        let (c_header, endianness) = CHeader::read(path);
+    pub fn read(reader: &mut BufReader<File>) -> (Header, Endianness) {
+        let (c_header, endianness) = CHeader::read(reader);
         let (affine, translation) = c_header.get_affine();
         let nb_streamlines = c_header.n_count as usize;
         let scalars = c_header.get_scalars_name().into_iter().map(

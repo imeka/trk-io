@@ -63,10 +63,6 @@ impl CHeader {
         f.seek(SeekFrom::Start(n_count_offset)).unwrap();
     }
 
-    pub fn seek_end(f: &mut File) {
-        f.seek(SeekFrom::Start(HEADER_SIZE as u64)).unwrap();
-    }
-
     pub fn get_scalars_name(&self) -> Vec<String> {
         read_names(&self.scalar_name, self.n_scalars as usize)
     }
@@ -112,13 +108,18 @@ impl CHeader {
         (affine, translation)
     }
 
-    pub fn read(path: &str) -> (CHeader, Endianness) {
+    pub fn read_from_file(path: &str) -> (CHeader, Endianness) {
         let f = File::open(path).expect("Can't read trk file.");
         let mut reader = BufReader::new(f);
-        let endianness = test_endianness(&mut reader);
+        CHeader::read(&mut reader)
+    }
+
+    pub fn read(reader: &mut BufReader<File>) -> (CHeader, Endianness) {
+        reader.seek(SeekFrom::Start(0)).unwrap();
+        let endianness = test_endianness(reader);
         let header = match endianness {
-            Endianness::Little => CHeader::read_::<LittleEndian>(&mut reader),
-            Endianness::Big => CHeader::read_::<BigEndian>(&mut reader)
+            Endianness::Little => CHeader::read_::<LittleEndian>(reader),
+            Endianness::Big => CHeader::read_::<BigEndian>(reader)
         };
         (header, endianness)
     }
