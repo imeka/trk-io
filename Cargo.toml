@@ -20,6 +20,6 @@ nalgebra = "0.13.0"
 tempdir = "0.3.0"
 
 [dependencies.nifti]
-git = "https://github.com/Enet4/nifti-rs.git"
+version = "0.3.1"
 features = ["ndarray_volumes"]
 optional = true
