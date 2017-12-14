@@ -236,30 +236,25 @@ fn test_endianness(reader: &mut BufReader<File>) -> Endianness {
     endianness
 }
 
+/// Returns the names from the [10][20] arrays of bytes.
+///
+/// Normal case: name\0\0...
+/// Special case: name\0{number}\0\0...
 fn read_names(names_bytes: &[u8], nb: usize) -> Vec<String> {
-    if nb == 0 {
-        return vec![];
-    }
-
     let mut names = Vec::with_capacity(nb);
     for names_byte in names_bytes.chunks(20) {
-        for (i, b) in names_byte.iter().enumerate() {
-            if *b == 0u8 {
-                let name = from_utf8(&names_byte[..i]).unwrap().to_string();
-                if names_byte[i + 1] == 0u8 {
-                    // Normal case where: name\0\0...
-                    names.push(name);
-                } else {
-                    // Special case where: name\0{number}\0\0...
-                    let number = names_byte[i + 1] - 48;
-                    for _ in 0..number {
-                        names.push(name.clone());
-                    }
-                }
-                break;
+        if names_byte[0] == 0u8 { break; }
+
+        let idx = names_byte.iter().position(|&e| e == 0u8).unwrap_or(20);
+        let name = from_utf8(&names_byte[..idx]).unwrap().to_string();
+        if idx < 19 && names_byte[idx + 1] != 0u8 {
+            let number = names_byte[idx + 1] - 48;
+            for _ in 0..number {
+                names.push(name.clone());
             }
+        } else {
+            names.push(name);
         }
-        if names.len() == nb { break; }
     }
 
     names
