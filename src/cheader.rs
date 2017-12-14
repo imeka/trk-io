@@ -95,7 +95,7 @@ impl CHeader {
         read_names(&self.property_name, self.n_properties as usize)
     }
 
-    pub fn get_affine(&self) -> (Affine, Translation) {
+    pub fn get_affine(&self) -> Affine4 {
         let mut affine = Affine4::identity();
 
         let scale = Affine4::from_diagonal(&Vector4::new(
@@ -124,8 +124,11 @@ impl CHeader {
         let inv = inverse_orientations_affine(&orientations, self.dim);
         affine = inv * affine;
 
-        affine = voxel_to_rasmm * affine;
+        voxel_to_rasmm * affine
+    }
 
+    pub fn get_affine_and_translation(&self) -> (Affine, Translation) {
+        let affine = self.get_affine();
         let translation = Translation::new(
             affine[12], affine[13], affine[14]);
         let affine = affine.fixed_slice::<U3, U3>(0, 0).into_owned();
