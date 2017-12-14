@@ -10,8 +10,16 @@ keywords = ["diffusion-mri", "trackvis", "trk"]
 categories = ["data-structures", "science"]
 license = "BSD-2-Clause"
 
+[features]
+use_nifti = ["nifti"]
+
 [dependencies]
 byteorder = "1.1.0"
 docopt = "0.8.0"
 nalgebra = "0.13.0"
 tempdir = "0.3.0"
+
+[dependencies.nifti]
+git = "https://github.com/Enet4/nifti-rs.git"
+features = ["ndarray_volumes"]
+optional = true

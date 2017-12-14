@@ -1,5 +1,6 @@
 
 extern crate byteorder;
+#[cfg(feature = "use_nifti")] extern crate nifti;
 extern crate nalgebra;
 
 mod array_sequence;

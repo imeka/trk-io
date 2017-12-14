@@ -58,6 +58,30 @@ pub struct CHeader {
 pub const HEADER_SIZE: usize = 1000;
 
 impl CHeader {
+    #[cfg(feature = "use_nifti")]
+    pub fn from_nifti(
+        dim: [u16; 8],
+        pixdim: [f32; 8],
+        srow_x: [f32; 4],
+        srow_y: [f32; 4],
+        srow_z: [f32; 4]
+    ) -> CHeader {
+        let affine = Affine::new(srow_x[0], srow_x[1], srow_x[2],
+                                 srow_y[0], srow_y[1], srow_y[2],
+                                 srow_z[0], srow_z[1], srow_z[2]);
+        let vo = affine_to_axcodes(&affine).into_bytes();
+        CHeader {
+            dim: [dim[1] as i16, dim[2] as i16, dim[3] as i16],
+            voxel_size: [pixdim[1], pixdim[2], pixdim[3]],
+            vox_to_ras: [srow_x[0], srow_x[1], srow_x[2], srow_x[3],
+                         srow_y[0], srow_y[1], srow_y[2], srow_y[3],
+                         srow_z[0], srow_z[1], srow_z[2], srow_z[3],
+                         0.0, 0.0, 0.0, 1.0],
+            voxel_order: [vo[0], vo[1], vo[2], 0u8],
+            ..CHeader::default()
+        }
+    }
+
     pub fn seek_n_count_field(f: &mut BufWriter<File>) {
         let n_count_offset = (HEADER_SIZE - 12) as u64;
         f.seek(SeekFrom::Start(n_count_offset)).unwrap();

@@ -3,6 +3,7 @@ use std::fs::{File};
 use std::io::{BufReader};
 
 use byteorder::{WriteBytesExt};
+#[cfg(feature = "use_nifti")] use nifti::NiftiHeader;
 
 use {Affine, ArraySequence, Translation};
 use cheader::{CHeader, Endianness};
@@ -22,6 +23,17 @@ pub struct Header {
 }
 
 impl Header {
+    #[cfg(feature = "use_nifti")]
+    pub fn from_nifti(h: NiftiHeader) -> Header {
+        let c_header = CHeader::from_nifti(
+            h.dim, h.pixdim, h.srow_x, h.srow_y, h.srow_z);
+        let (affine, translation) = c_header.get_affine();
+        Header {
+            c_header, affine, translation, nb_streamlines: 0,
+            scalars: vec![], properties: vec![]
+        }
+    }
+
     pub fn read(reader: &mut BufReader<File>) -> (Header, Endianness) {
         let (c_header, endianness) = CHeader::read(reader);
         let (affine, translation) = c_header.get_affine();
