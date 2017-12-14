@@ -176,6 +176,9 @@ impl CHeader {
             ..self.clone()
         };
 
+        // TODO This is using machine-specific endianness and will fail on all
+        // big-endian machine (which are very rare). We should write field by
+        // field with the right endianness.
         let bytes = unsafe {
             from_raw_parts(&header as *const CHeader as *const u8, HEADER_SIZE)
         };
