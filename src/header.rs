@@ -24,7 +24,7 @@ pub struct Header {
 
 impl Header {
     #[cfg(feature = "use_nifti")]
-    pub fn from_nifti(h: NiftiHeader) -> Header {
+    pub fn from_nifti(h: &NiftiHeader) -> Header {
         let c_header = CHeader::from_nifti(
             h.dim, h.pixdim, h.srow_x, h.srow_y, h.srow_z);
         let (affine, translation) = c_header.get_affine_and_translation();

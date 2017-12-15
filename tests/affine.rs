@@ -45,7 +45,7 @@ mod nifti_tests {
                                           0.0, 0.0, 0.0, 1.0]);
         assert_eq!(c_header.voxel_order, *b"LAS\0");
 
-        let header = Header::from_nifti(nifti_header);
+        let header = Header::from_nifti(&nifti_header);
         assert_eq!(header.affine, Affine::new(-1.0, 0.0, 0.0,
                                                0.0, 1.0, 0.0,
                                                0.0, 0.0, 1.0));
