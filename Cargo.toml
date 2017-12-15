@@ -20,6 +20,6 @@ nalgebra = "0.13.0"
 tempdir = "0.3.0"
 
 [dependencies.nifti]
-version = "0.3.1"
+version = "0.4.0"
 features = ["ndarray_volumes"]
 optional = true
