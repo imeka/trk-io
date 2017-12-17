@@ -23,6 +23,9 @@ Highlights
 TODOs
 -----
 
+- Add automated tests (travis)
+- Add badges (build passing, crates.io)
+- Do actual releases, not just publish
 - Better handling of scalars and properties. There's currently a way to access
   them but I wouldn't call it conveniant. They are in the header so you need to
   zip over them yourself.
