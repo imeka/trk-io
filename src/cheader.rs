@@ -2,7 +2,6 @@
 use std::fmt;
 use std::fs::{File};
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom};
-use std::slice::from_raw_parts;
 use std::str::from_utf8;
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian,
@@ -203,13 +202,39 @@ impl CHeader {
             ..self.clone()
         };
 
-        // TODO This is using machine-specific endianness and will fail on all
-        // big-endian machine (which are very rare). We should write field by
-        // field with the right endianness.
-        let bytes = unsafe {
-            from_raw_parts(&header as *const CHeader as *const u8, HEADER_SIZE)
-        };
-        writer.write(bytes).unwrap();
+        writer.write(&header.id_string).unwrap();
+        for i in &header.dim {
+            writer.write_i16::<LittleEndian>(*i).unwrap();
+        }
+        for f in &header.voxel_size {
+            writer.write_f32::<LittleEndian>(*f).unwrap();
+        }
+        for f in &header.origin {
+            writer.write_f32::<LittleEndian>(*f).unwrap();
+        }
+        writer.write_i16::<LittleEndian>(header.n_scalars).unwrap();
+        writer.write(&header.scalar_name).unwrap();
+        writer.write_i16::<LittleEndian>(header.n_properties).unwrap();
+        writer.write(&header.property_name).unwrap();
+        for f in &header.vox_to_ras {
+            writer.write_f32::<LittleEndian>(*f).unwrap();
+        }
+        writer.write(&header.reserved).unwrap();
+        writer.write(&header.voxel_order).unwrap();
+        writer.write(&header.pad2).unwrap();
+        for f in &header.image_orientation_patient {
+            writer.write_f32::<LittleEndian>(*f).unwrap();
+        }
+        writer.write(&header.pad1).unwrap();
+        writer.write_u8(header.invert_x).unwrap();
+        writer.write_u8(header.invert_y).unwrap();
+        writer.write_u8(header.invert_z).unwrap();
+        writer.write_u8(header.swap_x).unwrap();
+        writer.write_u8(header.swap_y).unwrap();
+        writer.write_u8(header.swap_z).unwrap();
+        writer.write_i32::<LittleEndian>(header.n_count).unwrap();
+        writer.write_i32::<LittleEndian>(header.version).unwrap();
+        writer.write_i32::<LittleEndian>(header.hdr_size).unwrap();
     }
 }
 
