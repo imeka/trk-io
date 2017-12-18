@@ -6,7 +6,7 @@ use std::iter::FromIterator;
 
 use tempdir::TempDir;
 
-use trk_io::{Affine, Header, Point, Reader, Streamlines, Writer};
+use trk_io::{Affine4, Header, Point, Reader, Streamlines, Writer};
 
 fn get_random_trk_path() -> String {
     let dir = TempDir::new("trk-io").unwrap();
@@ -27,7 +27,7 @@ fn test_write_dynamic() {
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone()));
         writer.write_from_iter(
-            [Point::new(0.0, 1.0, 2.0)].into_iter().cloned(), 1);
+            [Point::new(0.0, 1.0, 2.0)].iter().cloned(), 1);
 
         let v = vec![Point::new(0.0, 1.0, 2.0), Point::new(3.0, 4.0, 5.0)];
         writer.write_from_iter(v, 2);
@@ -102,6 +102,10 @@ fn test_write_standard_lps() {
 
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone()));
+        assert_eq!(writer.affine4, Affine4::new(-1.0, 0.0, 0.0, 3.5,
+                                                0.0, -1.0, 0.0, 13.5,
+                                                0.0, 0.0, 1.0, 1.0,
+                                                0.0, 0.0, 0.0, 1.0));
         for i in 0..10 {
             writer.write(&original_streamlines[i]);
         }
@@ -109,9 +113,10 @@ fn test_write_standard_lps() {
 
     let (written_header, written_streamlines) = load_trk(&write_to);
     assert_eq!(written_header.nb_streamlines, 10);
-    assert_eq!(written_header.affine, Affine::new(-1.0, 0.0, 0.0,
-                                                  0.0, -1.0, 0.0,
-                                                  0.0, 0.0, 1.0));
+    assert_eq!(written_header.affine4, Affine4::new(-1.0, 0.0, 0.0, 3.5,
+                                                    0.0, -1.0, 0.0, 13.5,
+                                                    0.0, 0.0, 1.0, -1.0,
+                                                    0.0, 0.0, 0.0, 1.0));
     assert_eq!(written_streamlines[0], [Point::new(-0.5, -1.5, 1.0),
                                         Point::new(0.0, 0.0, 2.0),
                                         Point::new(0.5, 1.5, 3.0)]);

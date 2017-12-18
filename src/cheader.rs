@@ -8,7 +8,7 @@ use byteorder::{BigEndian, ByteOrder, LittleEndian,
                 ReadBytesExt, WriteBytesExt};
 use nalgebra::{U3, Vector4};
 
-use {Affine, Affine4, Translation};
+use {Affine4};
 use orientation::{affine_to_axcodes, axcodes_to_orientations,
                   inverse_orientations_affine, orientations_transform};
 
@@ -124,14 +124,6 @@ impl CHeader {
         affine = inv * affine;
 
         voxel_to_rasmm * affine
-    }
-
-    pub fn get_affine_and_translation(&self) -> (Affine, Translation) {
-        let affine = self.get_affine();
-        let translation = Translation::new(
-            affine[12], affine[13], affine[14]);
-        let affine = affine.fixed_slice::<U3, U3>(0, 0).into_owned();
-        (affine, translation)
     }
 
     pub fn read_from_file(path: &str) -> (CHeader, Endianness) {

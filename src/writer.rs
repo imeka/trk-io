@@ -4,18 +4,19 @@ use std::io::BufWriter;
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
-use {Affine, CHeader, Header, Point, Streamlines, Translation};
+use {Affine, Affine4, CHeader, Header, Point, Streamlines, Translation};
+use affine::get_affine_and_translation;
 
 pub struct Writer {
     writer: BufWriter<File>,
+    pub affine4: Affine4,
     affine: Affine,
     translation: Translation,
     real_n_count: i32
 }
 
 impl Writer {
-    pub fn new(path: &str, reference: Option<Header>) -> Writer
-    {
+    pub fn new(path: &str, reference: Option<Header>) -> Writer {
         let f = File::create(path).expect("Can't create new trk file.");
         let mut writer = BufWriter::new(f);
 
@@ -25,12 +26,11 @@ impl Writer {
         };
         header.write(&mut writer);
 
-        Writer {
-            writer,
-            affine: header.affine.try_inverse().unwrap(),
-            translation: header.translation,
-            real_n_count: 0
-        }
+        // We are only interested in the inversed affine
+        let affine4 = header.affine4.try_inverse().unwrap();
+        let (affine, translation) = get_affine_and_translation(&affine4);
+
+        Writer { writer, affine4, affine, translation, real_n_count: 0 }
     }
 
     pub fn write_all(&mut self, streamlines: &Streamlines) {
@@ -59,7 +59,7 @@ impl Writer {
     }
 
     fn write_point(&mut self, p: Point) {
-        let p = (p - self.translation) * self.affine;
+        let p = p * self.affine + self.translation;
         self.writer.write_f32::<LittleEndian>(p.x).unwrap();
         self.writer.write_f32::<LittleEndian>(p.y).unwrap();
         self.writer.write_f32::<LittleEndian>(p.z).unwrap();
