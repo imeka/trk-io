@@ -8,7 +8,8 @@ use byteorder::{BigEndian, ByteOrder, LittleEndian,
                 ReadBytesExt, WriteBytesExt};
 use nalgebra::{U3, Vector4};
 
-use {Affine4};
+#[cfg(feature = "use_nifti")] use Affine;
+use Affine4;
 use orientation::{affine_to_axcodes, axcodes_to_orientations,
                   inverse_orientations_affine, orientations_transform};
 

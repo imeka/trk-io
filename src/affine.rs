@@ -3,6 +3,7 @@
 use nifti::NiftiHeader;
 use nalgebra::U3;
 
+#[cfg(feature = "use_nifti")]  use CHeader;
 use {Affine, Affine4, Translation};
 
 pub fn get_affine_and_translation(
