@@ -5,6 +5,11 @@ The `trk-io` crate provides a `TrackVis`__  (.trk) reader and writer.
 
 __ http://www.trackvis.org/docs/?subsect=fileformat
 
+|build_status|_
+
+.. |build_status| image:: https://travis-ci.org/imeka/trk-io.svg?branch=master
+.. _build_status: https://travis-ci.org/imeka/trk-io
+
 Highlights
 ----------
 
