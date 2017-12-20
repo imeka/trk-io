@@ -3,6 +3,10 @@ rust:
   - stable
   - beta
   - nightly
+env:
+  - FEATURES_FLAG=""
+  - FEATURES_FLAG="--features use_nifti"
+script: cargo test $FEATURES_FLAG
 matrix:
   allow_failures:
     - rust: nightly
