@@ -23,7 +23,6 @@ Highlights
 TODOs
 -----
 
-- Add automated tests (travis)
 - Add badges (build passing, crates.io)
 - Do actual releases, not just publish
 - Better handling of scalars and properties. There's currently a way to access
