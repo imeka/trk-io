@@ -28,6 +28,32 @@ Highlights
   
   __ https://www.imeka.ca/mi-brain
 
+Examples
+--------
+
+::
+
+    // Read complete streamlines to memory
+    let streamlines = Reader::new("bundle.trk").read_all();
+    for streamline in &streamlines {
+        println!("Nb points: {}", streamline.len());
+        for point in streamline {
+            println!("{}", point);
+        }
+    }
+
+::
+
+    // Simple read/write. Using a generator (read one streamline at a time)
+    let reader = Reader::new("full_brain.trk");
+    let mut writer = Writer::new("copy.trk", Some(reader.header.clone()));
+    for streamline in reader.into_iter() {
+        writer.write(streamline);
+    }
+    // The new file will be completed only at the end of the scope. The 
+    // 'n_count' field is written in the destructor because we don't
+    // know how many streamlines the user will write.
+
 TODOs
 -----
 
