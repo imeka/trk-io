@@ -1,5 +1,7 @@
 `trk-io` implements a `TrackVis` (.trk) reader and writer.
 
+[![Latest Version](https://img.shields.io/badge/crates.io-0.3.4-orange.svg)](https://crates.io/crates/trk-io) [![Build Status](https://travis-ci.org/imeka/trk-io.svg?branch=master)](https://travis-ci.org/imeka/trk-io)
+
 Highlights
 ----------
 
@@ -12,3 +14,4 @@ Highlights
 - Follows ``nibabel.streamlines`` architecture (all 3D points are in a single
   ``Vec![Point3D]``). Currently, this is only useful for performance, but it may
   lead to easier changes when and if we support BLAS.
+- Handles endianness.
