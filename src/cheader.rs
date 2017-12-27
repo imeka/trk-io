@@ -18,8 +18,8 @@ pub enum Endianness { Little, Big }
 impl fmt::Display for Endianness {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Endianness::Little => write!(f, "<"),
-            Endianness::Big => write!(f, ">")
+            Endianness::Little => write!(f, "< (Little)"),
+            Endianness::Big => write!(f, "> (Big)")
         }
     }
 }
