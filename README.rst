@@ -57,6 +57,7 @@ Examples
 TODOs
 -----
 
+- Support TCK reading/writing
 - Do actual releases, not just publish
 - Better handling of scalars and properties. There's currently a way to access
   them but I wouldn't call it conveniant. They are in the header so you need to
