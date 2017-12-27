@@ -1,6 +1,6 @@
 `trk-io` implements a `TrackVis` (.trk) reader and writer.
 
-[![Latest Version](https://img.shields.io/badge/crates.io-0.3.4-orange.svg)](https://crates.io/crates/trk-io) [![Build Status](https://travis-ci.org/imeka/trk-io.svg?branch=master)](https://travis-ci.org/imeka/trk-io)
+[![Latest Version](https://img.shields.io/badge/crates.io-0.3.5-orange.svg)](https://crates.io/crates/trk-io) [![Build Status](https://travis-ci.org/imeka/trk-io.svg?branch=master)](https://travis-ci.org/imeka/trk-io)
 
 Highlights
 ----------
