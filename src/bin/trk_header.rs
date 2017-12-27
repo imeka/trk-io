@@ -3,6 +3,8 @@ extern crate docopt;
 extern crate trk_io;
 
 use docopt::Docopt;
+use std::fs::File;
+use std::io::BufReader;
 use std::path::Path;
 use std::str;
 use trk_io::CHeader;
@@ -13,11 +15,12 @@ Print a TrackVis (.trk) header in an readable form
 Usage:
   trk_header <input> [options]
   trk_header (-h | --help)
-  trk_header --version
+  trk_header (-v | --version)
 
 Options:
-  -h --help              Show this screen.
-  --version              Show version.
+  -a --all      Also print computed fields (endianness, affine, etc.)
+  -h --help     Show this screen.
+  -v --version  Show version.
 ";
 
 fn main() {
@@ -25,15 +28,19 @@ fn main() {
     let args = Docopt::new(USAGE)
                       .and_then(|dopt| dopt.version(Some(version)).parse())
                       .unwrap_or_else(|e| e.exit());
+    let print_all = args.get_bool("--all");
     let input = Path::new(args.get_str("<input>"));
     if !input.exists() {
         panic!("Input trk '{:?}' doesn't exist.", input);
     }
-    let input = input.to_str()
-        .expect("Your input path contains non-UTF-8 cahracters");
 
-    let (header, endianness) = CHeader::read_from_file(input);
-    println!("Endianness {}   (not an actual field)", endianness);
+    let f = File::open(args.get_str("<input>")).expect("Can't read trk file.");
+    let mut reader = BufReader::new(f);
+    let (header, endianness) = CHeader::read(&mut reader);
+
+    if print_all {
+        println!("---------- Actual fields ----------");
+    }
     println!("id_string: {:?} ({})",
         header.id_string,
         str::from_utf8(&header.id_string).unwrap());
@@ -52,7 +59,9 @@ fn main() {
     println!("            {:?}", &header.vox_to_ras[4..8]);
     println!("            {:?}", &header.vox_to_ras[8..12]);
     println!("            {:?}", &header.vox_to_ras[12..16]);
-    println!("voxel_order: {:?}", header.voxel_order);
+    println!("voxel_order: {:?} ({})",
+        header.voxel_order,
+        str::from_utf8(&header.voxel_order).unwrap());
     println!("image_orientation_patient: {:?}",
         header.image_orientation_patient);
     println!("invert: {:?} {:?} {:?}",
@@ -62,4 +71,13 @@ fn main() {
     println!("n_count: {:?}", header.n_count);
     println!("version: {:?}", header.version);
     println!("hdr_size: {:?}", header.hdr_size);
+
+    if print_all {
+        let to_world = header.get_affine();
+        let to_rasmm = to_world.try_inverse().unwrap();
+        println!("\n---------- Computed fields ----------");
+        println!("Endianness {}", endianness);
+        print!("to world {}", to_world);
+        print!("to rasmm {}", to_rasmm);
+    }
 }
