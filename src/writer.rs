@@ -18,7 +18,7 @@ pub struct Writer {
 impl Writer {
     pub fn new(path: &str, reference: Option<Header>) -> Writer {
         let f = File::create(path).expect("Can't create new trk file.");
-        let mut writer = BufWriter::new(f);
+        let mut writer = BufWriter::with_capacity(1024, f);
 
         let header = match reference {
             Some(r) => r.clone(),
