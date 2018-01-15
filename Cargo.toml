@@ -14,12 +14,12 @@ license = "BSD-2-Clause"
 use_nifti = ["nifti"]
 
 [dependencies]
-byteorder = "1.2.1"
-docopt = "0.8.0"
-nalgebra = "0.13.0"
-tempdir = "0.3.0"
+byteorder = "1.2"
+docopt = "0.8"
+nalgebra = "0.13"
+tempdir = "0.3"
 
 [dependencies.nifti]
-version = "0.4.0"
+version = "0.4"
 features = ["ndarray_volumes"]
 optional = true
