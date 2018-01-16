@@ -10,7 +10,7 @@ __ http://www.trackvis.org/docs/?subsect=fileformat
 .. |build_status| image:: https://travis-ci.org/imeka/trk-io.svg?branch=master
 .. _build_status: https://travis-ci.org/imeka/trk-io
 
-.. |crates| image:: https://img.shields.io/badge/crates.io-0.3.6-orange.svg
+.. |crates| image:: https://img.shields.io/badge/crates.io-0.3.7-orange.svg
 .. _crates: https://crates.io/crates/trk-io
 
 Highlights
