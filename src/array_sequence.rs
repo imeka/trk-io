@@ -74,8 +74,12 @@ impl<T> ArraySequence<T> {
         self.data.push(val);
     }
 
+    pub fn nb_push_done(&self) -> usize {
+        self.data.len() - self.offsets.last().unwrap()
+    }
+
     pub fn end_push(&mut self) {
-        let nb = self.data.len() - self.offsets.last().unwrap();
+        let nb = self.nb_push_done();
         if nb > 0 {
             self.lengths.push(nb);
             self.offsets.push(self.data.len());
