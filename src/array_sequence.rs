@@ -152,9 +152,12 @@ mod tests {
     fn test_dynamic() {
         let mut arr = ArraySequence::empty();
         for i in 0..10 {
+            assert_eq!(arr.nb_push_done(), i);
             arr.push(i);
+            assert_eq!(arr.nb_push_done(), i + 1);
         }
         arr.end_push();
+        assert_eq!(arr.nb_push_done(), 0);
 
         assert_eq!(arr.len(), 1);
         assert_eq!(arr.lengths, vec![10]);
