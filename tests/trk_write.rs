@@ -32,7 +32,7 @@ fn test_write_dynamic() {
         let v = vec![Point::new(0.0, 1.0, 2.0), Point::new(3.0, 4.0, 5.0)];
         writer.write_from_iter(v, 2);
 
-        let v = Vec::from_iter((0..15));
+        let v = Vec::from_iter(0..15);
         let iter = v.chunks(3).map(
             |ints| Point::new(ints[0] as f32, ints[1] as f32, ints[2] as f32)
         );
