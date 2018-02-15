@@ -21,7 +21,7 @@ impl Writer {
         let mut writer = BufWriter::new(f);
 
         let header = match reference {
-            Some(r) => r.clone(),
+            Some(r) => r,
             None => Header::default()
         };
         header.write(&mut writer);
