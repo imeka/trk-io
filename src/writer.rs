@@ -33,8 +33,8 @@ impl Writer {
         Writer { writer, affine4, affine, translation, real_n_count: 0 }
     }
 
-    pub fn transform_to_world(&mut self, to_world: &Affine4) {
-        self.affine4 = to_world * self.affine4;
+    pub fn apply_affine(&mut self, affine: &Affine4) {
+        self.affine4 = self.affine4 * affine;
         let (affine, translation) = get_affine_and_translation(&self.affine4);
         self.affine = affine;
         self.translation = translation;
