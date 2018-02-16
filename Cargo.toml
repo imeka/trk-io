@@ -1,6 +1,6 @@
 [package]
 name = "trk-io"
-version = "0.3.9"
+version = "0.4.0"
 authors = ["Nil Goyette <nil.goyette@imeka.ca>"]
 
 description = "TrackVis (*.trk) reader and writer"
