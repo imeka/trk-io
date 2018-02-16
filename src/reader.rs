@@ -24,7 +24,7 @@ impl Reader {
         let mut reader = BufReader::new(f);
 
         let (header, endianness) = Header::read(&mut reader);
-        let affine = header.affine;
+        let affine = header.affine.transpose();
         let translation = header.translation;
         let nb_floats_per_point = 3 + header.scalars.len() as usize;
 
