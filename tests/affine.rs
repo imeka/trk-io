@@ -5,8 +5,32 @@ extern crate trk_io;
 #[cfg(feature = "use_nifti")]
 mod nifti_tests {
     use nifti::{InMemNiftiObject, NiftiObject};
-    use trk_io::{Affine, Affine4, CHeader, Header, Translation};
-    use trk_io::affine::{rasmm_to_trackvis, trackvis_to_rasmm};
+    use trk_io::{Affine, Affine4, CHeader, Header, Point, Translation, Writer};
+    use trk_io::tests::{get_random_trk_path, load_trk};
+    use trk_io::affine::{rasmm_to_trackvis, raw_affine_from_nifti, trackvis_to_rasmm};
+
+    #[test]
+    fn test_complex_affine() {
+        let header = InMemNiftiObject::from_file(
+            "data/complex_affine.nii.gz").unwrap().header().clone();
+        let write_to = get_random_trk_path();
+
+        {
+            let mut writer = Writer::new(&write_to, Some(Header::from_nifti(&header)));
+            writer.apply_affine(&raw_affine_from_nifti(&header));
+            writer.write(&[Point::new(13.75, 27.90, 51.55),
+                           Point::new(14.00, 27.95, 51.98),
+                           Point::new(14.35, 28.05, 52.33)]);
+        }
+
+        // Loading them back without the right transformation is not supposed to give back the same
+        // points. Results are exactly the same as with DiPy.
+        let (_, streamlines) = load_trk(&write_to);
+        let streamline = &streamlines[0];
+        assert_eq!(streamline[0], Point::new(-82.54104, -25.178139, 37.788338));
+        assert_eq!(streamline[1], Point::new(-81.933876, -25.032265, 38.850258));
+        assert_eq!(streamline[2], Point::new(-81.07349, -24.765305, 39.70571));
+    }
 
     #[test]
     fn test_simple_header_from_nifti() {
