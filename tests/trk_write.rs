@@ -1,23 +1,10 @@
 
-extern crate tempdir;
 extern crate trk_io;
 
 use std::iter::FromIterator;
 
-use tempdir::TempDir;
-
-use trk_io::{Affine4, Header, Point, Reader, Streamlines, Writer};
-
-fn get_random_trk_path() -> String {
-    let dir = TempDir::new("trk-io").unwrap();
-    let path = dir.into_path().join("out.trk");
-    path.to_str().unwrap().to_string()
-}
-
-fn load_trk(path: &str) -> (Header, Streamlines) {
-    let mut reader = Reader::new(path);
-    (reader.header.clone(), reader.read_all())
-}
+use trk_io::{Affine4, Point, Streamlines, Writer};
+use trk_io::tests::{get_random_trk_path, load_trk};
 
 #[test]
 fn test_write_dynamic() {
