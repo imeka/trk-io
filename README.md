@@ -1,9 +1,8 @@
+# trk-io &emsp; [![Latest Version](https://img.shields.io/badge/crates.io-0.4.3-orange.svg)](https://crates.io/crates/trk-io) [![Build Status](https://travis-ci.org/imeka/trk-io.svg?branch=master)](https://travis-ci.org/imeka/trk-io)
+
 `trk-io` implements a `TrackVis` (.trk) reader and writer.
 
-[![Latest Version](https://img.shields.io/badge/crates.io-0.4.3-orange.svg)](https://crates.io/crates/trk-io) [![Build Status](https://travis-ci.org/imeka/trk-io.svg?branch=master)](https://travis-ci.org/imeka/trk-io)
-
-Highlights
-----------
+## Highlights
 
 - Can read and write `TrackVis` files. Handles affine transformation as
   ``nibabel.streamlines`` and ``MI-Brain`` would.
@@ -16,8 +15,7 @@ Highlights
   lead to easier changes when and if we support BLAS.
 - Handles endianness.
 
-Examples
---------
+## Examples
 
 ```rust
 // Read complete streamlines to memory
@@ -40,3 +38,14 @@ for streamline in reader.into_iter() {
 // 'n_count' field is written in the destructor because we don't
 // know how many streamlines the user will write.
 ```
+
+## Roadmap
+
+There's still a lot of work to do but it should work perfectly for simple use cases. In particular, future versions should be able to:
+
+- Support TCK reading/writing
+- Better handling of scalars and properties. There's currently a way to access them but I wouldn't call it conveniant. They are in the header so you need to zip over them yourself.
+- Create some binary tools using this lib, e.g. show_affine, count_tracks, pruning, strip_info, color, etc.
+- Support for `ops.Range`, e.g. `streamlines[0..10]`
+
+Your help is much appreciated. Consider filing an [issue](https://github.com/imeka/trk-io/issues) in case something is missing for your use case to work. Pull requests are also welcome.
