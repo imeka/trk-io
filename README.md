@@ -1,4 +1,4 @@
-# trk-io &emsp; [![Latest Version](https://img.shields.io/badge/crates.io-0.4.3-orange.svg)](https://crates.io/crates/trk-io) [![Build Status](https://travis-ci.org/imeka/trk-io.svg?branch=master)](https://travis-ci.org/imeka/trk-io)
+# trk-io &emsp; [![Latest Version](https://img.shields.io/badge/crates.io-0.4.3-orange.svg)](https://crates.io/crates/trk-io) [![Build Status](https://travis-ci.org/imeka/trk-io.svg?branch=master)](https://travis-ci.org/imeka/trk-io) [![dependency status](https://deps.rs/repo/github/imeka/trk-io/status.svg)](https://deps.rs/repo/github/imeka/trk-io)
 
 `trk-io` implements a `TrackVis` (.trk) reader and writer.
 
