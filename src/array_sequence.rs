@@ -63,7 +63,15 @@ impl<T> ArraySequence<T> {
         let offsets = [0].iter().chain(&lengths).scan(0, |state, x| {
             *state += *x;
             Some(*state)
-        }).collect();
+        }).collect::<Vec<usize>>();
+
+        // Check if `offsets` fits with the numbers of points in `data`
+        let expected_points = *offsets.last().unwrap();
+        if expected_points != data.len() {
+            panic!(
+                "`offsets` declares {} points but `data` contains {} points.",
+                expected_points, data.len());
+        }
 
         ArraySequence { offsets, data: data }
     }
@@ -143,6 +151,24 @@ mod tests {
                  Point::new(0.0, 0.0, 2.0)]);
         assert_eq!(arr.len(), 3);
         assert_eq!(arr.offsets, vec![0, 2, 5, 7]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_new_not_enough() {
+        ArraySequence::new(
+            vec![2],
+            vec![Point::new(1.0, 0.0, 0.0)]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_new_too_much() {
+        ArraySequence::new(
+            vec![2],
+            vec![Point::new(1.0, 0.0, 0.0),
+                 Point::new(1.0, 0.0, 0.0),
+                 Point::new(1.0, 0.0, 0.0)]);
     }
 
     #[test]
