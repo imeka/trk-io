@@ -4,7 +4,6 @@ use std::vec::Vec;
 
 #[derive(Clone, PartialEq)]
 pub struct ArraySequence<T> {
-    pub lengths: Vec<usize>,
     pub offsets: Vec<usize>,
     pub data: Vec<T>,
 }
@@ -30,11 +29,10 @@ impl<'a, T> Iterator for ArraySequenceIterator<'a, T> {
     type Item = &'a [T];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.it_idx < self.arr.lengths.len() {
+        if self.it_idx < self.arr.offsets.len() - 1 {
             self.it_idx += 1;
             Some(&self.arr[self.it_idx - 1])
-        }
-        else {
+        } else {
             None
         }
     }
@@ -52,7 +50,7 @@ impl<T> Index<usize> for ArraySequence<T> {
 
 impl<T> ArraySequence<T> {
     pub fn empty() -> ArraySequence<T> {
-        ArraySequence { lengths: vec![], offsets: vec![0], data: vec![] }
+        ArraySequence { offsets: vec![0], data: vec![] }
     }
 
     pub fn new(
@@ -67,7 +65,7 @@ impl<T> ArraySequence<T> {
             Some(*state)
         }).collect();
 
-        ArraySequence { lengths, offsets, data: data }
+        ArraySequence { offsets, data: data }
     }
 
     pub fn push(&mut self, val: T) {
@@ -81,7 +79,6 @@ impl<T> ArraySequence<T> {
     pub fn end_push(&mut self) {
         let nb = self.nb_push_done();
         if nb > 0 {
-            self.lengths.push(nb);
             self.offsets.push(self.data.len());
         }
     }
@@ -94,7 +91,14 @@ impl<T> ArraySequence<T> {
     }
 
     pub fn len(&self) -> usize {
-        self.lengths.len()
+        self.offsets.len() - 1
+    }
+
+    /// Same as obj[i].len(), without building a slice
+    pub fn length_of_array(&self, i: usize) -> usize {
+        let current = unsafe { *self.offsets.get_unchecked(i) };
+        let next = unsafe { *self.offsets.get_unchecked(i + 1) };
+        next - current
     }
 }
 
@@ -146,6 +150,7 @@ mod tests {
                     Point::new(0.0, 2.0, 0.0),
                     Point::new(0.0, 3.0, 0.0)]);
         assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
@@ -160,12 +165,16 @@ mod tests {
         assert_eq!(arr.nb_push_done(), 0);
 
         assert_eq!(arr.len(), 1);
-        assert_eq!(arr.lengths, vec![10]);
+        assert_eq!(arr.length_of_array(0), 10);
+        assert_eq!(arr[0].len(), 10);
         assert_eq!(arr.offsets, vec![0, 10]);
 
         arr.extend(vec![11, 12, 13, 14, 15]);
         assert_eq!(arr.len(), 2);
-        assert_eq!(arr.lengths, vec![10, 5]);
+        assert_eq!(arr.length_of_array(0), 10);
+        assert_eq!(arr[0].len(), 10);
+        assert_eq!(arr.length_of_array(1), 5);
+        assert_eq!(arr[1].len(), 5);
         assert_eq!(arr.offsets, vec![0, 10, 15]);
     }
 
@@ -173,14 +182,12 @@ mod tests {
     fn test_empty_push() {
         let mut arr = ArraySequence::<f64>::empty();
         assert_eq!(arr.len(), 0);
-        assert_eq!(arr.lengths, vec![]);
         assert_eq!(arr.offsets, vec![0]);
 
         // An `end_push` without any `push` should do nothing
         arr.end_push();
 
         assert_eq!(arr.len(), 0);
-        assert_eq!(arr.lengths, vec![]);
         assert_eq!(arr.offsets, vec![0]);
     }
 }
