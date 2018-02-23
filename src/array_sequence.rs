@@ -100,6 +100,19 @@ impl<T> ArraySequence<T> {
         let next = unsafe { *self.offsets.get_unchecked(i + 1) };
         next - current
     }
+
+    pub fn filter<P>(&self, predicate: &mut P) -> ArraySequence<T>
+        where P: FnMut(&[T]) -> bool,
+              T: Clone
+    {
+        let mut new = ArraySequence::<T>::empty();
+        for array in self {
+            if predicate(array) {
+                new.extend(array.iter().cloned());
+            }
+        }
+        new
+    }
 }
 
 #[cfg(test)]
@@ -189,5 +202,23 @@ mod tests {
 
         assert_eq!(arr.len(), 0);
         assert_eq!(arr.offsets, vec![0]);
+    }
+
+    #[test]
+    fn test_filter() {
+        let p = Point::new(1.0, 1.0, 1.0);
+        let arr = ArraySequence::new(
+            vec![2, 3, 2, 3],
+            vec![p * 1.0, p * 2.0,
+                 p * 2.0, p * 3.0, p * 4.0,
+                 p * 3.0, p * 4.0,
+                 p * 4.0, p * 5.0, p * 6.0]);
+        let filtered = arr.filter(&mut |arr: &[Point]| arr.len() == 3);
+        assert_eq!(filtered.len(), 2);
+        assert_eq!(filtered[0], [p * 2.0, p * 3.0, p * 4.0]);
+        assert_eq!(filtered[1], [p * 4.0, p * 5.0, p * 6.0]);
+
+        // Ensure that arr is still usable
+        assert_eq!(arr.len(), 4);
     }
 }
