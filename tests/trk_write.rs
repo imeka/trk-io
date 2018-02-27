@@ -1,10 +1,12 @@
-
+extern crate tempdir;
 extern crate trk_io;
+
+mod test;
 
 use std::iter::FromIterator;
 
 use trk_io::{Affine4, Point, Streamlines, Writer};
-use trk_io::tests::{get_random_trk_path, load_trk};
+use test::{get_random_trk_path, load_trk};
 
 #[test]
 fn test_write_dynamic() {

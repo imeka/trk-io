@@ -1,13 +1,16 @@
-
-#[cfg(feature = "use_nifti")] extern crate nifti;
+#[cfg(feature = "use_nifti")]
+extern crate nifti;
+extern crate tempdir;
 extern crate trk_io;
+
+mod test;
 
 #[cfg(feature = "use_nifti")]
 mod nifti_tests {
     use nifti::{InMemNiftiObject, NiftiObject};
     use trk_io::{Affine, Affine4, CHeader, Header, Point, Translation, Writer};
-    use trk_io::tests::{get_random_trk_path, load_trk};
     use trk_io::affine::{rasmm_to_trackvis, raw_affine_from_nifti, trackvis_to_rasmm};
+    use test::{get_random_trk_path, load_trk};
 
     #[test]
     fn test_complex_affine() {
