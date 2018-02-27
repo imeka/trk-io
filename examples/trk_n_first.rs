@@ -1,4 +1,3 @@
-
 extern crate docopt;
 extern crate trk_io;
 

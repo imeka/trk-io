@@ -1,12 +1,13 @@
-
 extern crate docopt;
 extern crate trk_io;
 
-use docopt::Docopt;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use std::str;
+
+use docopt::Docopt;
+
 use trk_io::CHeader;
 
 static USAGE: &'static str = "
