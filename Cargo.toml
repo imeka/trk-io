@@ -15,8 +15,10 @@ use_nifti = ["nifti"]
 
 [dependencies]
 byteorder = "1.2"
-docopt = "0.8"
 nalgebra = "0.14"
+
+[dev-dependencies]
+docopt = "0.8"
 tempdir = "0.3"
 
 [dependencies.nifti]
