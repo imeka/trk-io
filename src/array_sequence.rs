@@ -1,5 +1,7 @@
 
+use std::mem;
 use std::ops::Index;
+use std::slice;
 use std::vec::Vec;
 
 #[derive(Clone, PartialEq)]
@@ -35,6 +37,37 @@ impl<'a, T> Iterator for ArraySequenceIterator<'a, T> {
         } else {
             None
         }
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut ArraySequence<T> {
+    type Item = &'a mut [T];
+    type IntoIter = ArraySequenceIteratorMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        ArraySequenceIteratorMut {
+            data: &mut self.data,
+            offsets: self.offsets.iter(),
+            pos: 0
+        }
+    }
+}
+
+pub struct ArraySequenceIteratorMut<'a, T: 'a> {
+    data: &'a mut [T],
+    offsets: slice::Iter<'a, usize>,
+    pos: usize,
+}
+
+impl<'a, T> Iterator for ArraySequenceIteratorMut<'a, T> {
+    type Item = &'a mut [T];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.pos += self.offsets.next()?;
+        let data = mem::replace(&mut self.data, &mut []);
+        let (slice, remaining_data) = data.split_at_mut(self.pos);
+        self.data = remaining_data;
+        Some(slice)
     }
 }
 
