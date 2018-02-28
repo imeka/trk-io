@@ -45,27 +45,28 @@ impl<'a, T> IntoIterator for &'a mut ArraySequence<T> {
     type IntoIter = ArraySequenceIteratorMut<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        ArraySequenceIteratorMut {
-            data: &mut self.data,
-            offsets: self.offsets.iter(),
-            pos: 0
-        }
+        let mut offsets = self.offsets.iter();
+        let last_offset = *offsets.next().unwrap();
+        ArraySequenceIteratorMut { data: &mut self.data, offsets, last_offset }
     }
 }
 
 pub struct ArraySequenceIteratorMut<'a, T: 'a> {
     data: &'a mut [T],
     offsets: slice::Iter<'a, usize>,
-    pos: usize,
+    last_offset: usize,
 }
 
 impl<'a, T> Iterator for ArraySequenceIteratorMut<'a, T> {
     type Item = &'a mut [T];
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.pos += self.offsets.next()?;
+        let current_offset = *self.offsets.next()?;
+        let nb_elements = current_offset - self.last_offset;
+        self.last_offset = current_offset;
+
         let data = mem::replace(&mut self.data, &mut []);
-        let (slice, remaining_data) = data.split_at_mut(self.pos);
+        let (slice, remaining_data) = data.split_at_mut(nb_elements);
         self.data = remaining_data;
         Some(slice)
     }
@@ -240,7 +241,6 @@ mod tests {
         let mut i = 0;
         for streamline in &mut streamlines {
             for p in streamline {
-                println!("{}", p);
                 if i % 2 == 0 {
                     *p = Point::zeros();
                 }
