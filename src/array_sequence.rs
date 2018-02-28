@@ -226,6 +226,38 @@ mod tests {
     }
 
     #[test]
+    fn test_iterator_mut() {
+        let mut streamlines = ArraySequence::new(
+            vec![2, 3, 2],
+            vec![Point::new(1.0, 0.0, 0.0),
+                 Point::new(2.0, 0.0, 0.0),
+                 Point::new(0.0, 1.0, 0.0),
+                 Point::new(0.0, 2.0, 0.0),
+                 Point::new(0.0, 3.0, 0.0),
+                 Point::new(0.0, 0.0, 1.0),
+                 Point::new(0.0, 0.0, 2.0)]);
+        // TODO Use enumerate
+        let mut i = 0;
+        for streamline in &mut streamlines {
+            for p in streamline {
+                println!("{}", p);
+                if i % 2 == 0 {
+                    *p = Point::zeros();
+                }
+            }
+            i += 1;
+        }
+        let mut iter = streamlines.into_iter();
+        assert_eq!(iter.next().unwrap(), [Point::zeros(), Point::zeros()]);
+        assert_eq!(iter.next().unwrap(), [Point::new(0.0, 1.0, 0.0),
+                                          Point::new(0.0, 2.0, 0.0),
+                                          Point::new(0.0, 3.0, 0.0)]);
+        assert_eq!(iter.next().unwrap(), [Point::zeros(), Point::zeros()]);
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
     fn test_dynamic() {
         let mut arr = ArraySequence::empty();
         for i in 0..10 {
