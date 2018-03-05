@@ -1,15 +1,14 @@
 
 #[cfg(feature = "use_nifti")] 
 use nifti::NiftiHeader;
-use nalgebra::U3;
+use nalgebra::{Matrix3, Matrix4, RowVector3, Scalar, U3};
 
-#[cfg(feature = "use_nifti")] use CHeader;
-use {Affine, Affine4, Translation};
+#[cfg(feature = "use_nifti")] use {Affine4, CHeader};
 
-pub fn get_affine_and_translation(
-    affine: &Affine4
-) -> (Affine, Translation) {
-    let translation = Translation::new(
+pub fn get_affine_and_translation<T: Scalar>(
+    affine: &Matrix4<T>
+) -> (Matrix3<T>, RowVector3<T>) {
+    let translation = RowVector3::<T>::new(
         affine[12], affine[13], affine[14]);
     let affine = affine.fixed_slice::<U3, U3>(0, 0).into_owned();
     (affine, translation)
