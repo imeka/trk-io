@@ -66,7 +66,7 @@ impl Writer {
     }
 
     fn write_point(&mut self, p: Point) {
-        let p = p * self.affine + self.translation;
+        let p = self.affine * p + self.translation;
         self.writer.write_f32::<LittleEndian>(p.x).unwrap();
         self.writer.write_f32::<LittleEndian>(p.y).unwrap();
         self.writer.write_f32::<LittleEndian>(p.z).unwrap();

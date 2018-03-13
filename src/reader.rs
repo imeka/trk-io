@@ -24,7 +24,7 @@ impl Reader {
         let mut reader = BufReader::new(f);
 
         let (header, endianness) = Header::read(&mut reader);
-        let affine = header.affine.transpose();
+        let affine = header.affine;
         let translation = header.translation;
         let nb_floats_per_point = 3 + header.scalars.len() as usize;
 
@@ -69,7 +69,7 @@ impl Reader {
 
         for floats in self.float_buffer.chunks(self.nb_floats_per_point) {
             let p = Point::new(floats[0], floats[1], floats[2]);
-            points.push((p * self.affine) + self.translation);
+            points.push((self.affine * p) + self.translation);
 
             for (&mut (_, ref mut scalar), f) in self.header.scalars.iter_mut()
                                                  .zip(&floats[3..]) {
