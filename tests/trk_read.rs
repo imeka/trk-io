@@ -162,7 +162,7 @@ fn check_complex_scalars_and_properties(header: Header) {
         vec![0.200000003, 0.300000012, 0.400000006, 0.500000000,
              0.600000024, 0.600000024, 0.699999988, 0.800000012]);
     assert!(header.scalars[3] == (String::from("fa"), fa));
-    
+
     // Properties
     assert_eq!(
         header.properties[0],

@@ -46,10 +46,10 @@ pub fn affine_to_axcodes(affine: &Affine) -> String {
 }
 
 /// Orientation of input axes in terms of output axes for `affine`
-/// 
+///
 /// Valid for an affine transformation from ``p`` dimensions to ``q``
 /// dimensions (``affine.shape == (q + 1, p + 1)``).
-/// 
+///
 /// The calculated orientations can be used to transform associated arrays
 /// to best match the output orientations. If ``p`` > ``q``, then some of
 /// the output axes should be considered dropped in this orientation.
@@ -64,7 +64,7 @@ fn io_orientations(affine: &Affine) -> Orientations {
     // Zooms can be zero, in which case all elements in the column are zero,
     // and we can leave them as they are
     zooms.apply(|z| if z == 0.0 {1.0} else {z});
-    
+
     let rs = Affine::new(
         affine[0] / zooms[0], affine[3] / zooms[1], affine[6] / zooms[2],
         affine[1] / zooms[0], affine[4] / zooms[1], affine[7] / zooms[2],
@@ -183,7 +183,7 @@ pub fn orientations_transform(
 }
 
 /// Affine transform reversing transforms implied in `ornt`
-/// 
+///
 /// Imagine you have an array ``arr`` of shape `shape`, and you apply the
 /// transforms implied by `ornt` (more below), to get ``tarr``. ``tarr`` may
 /// have a different shape ``shape_prime``. This routine returns the affine

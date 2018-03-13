@@ -50,7 +50,7 @@ fn main() {
                 writer.write(&streamline);
             }
         }
-    } else if let Ok(nb) = args.get_str("--number").parse::<usize>() {
+    } else if let Ok(_nb) = args.get_str("--number").parse::<usize>() {
         panic!("Not implemented yet");
     } else {
         panic!("--percent or --number can't be parsed to a number");

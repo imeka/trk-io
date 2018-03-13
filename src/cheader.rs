@@ -261,7 +261,7 @@ impl Default for CHeader {
 }
 
 /// Returns the endianness used when saving the trk file read by `reader`
-/// 
+///
 /// We use `version` to discover the endianness because it's the biggest
 /// integer field with the most constrained possible values {1, 2}.
 /// Read in LittleEndian, version == 1 or 2.
