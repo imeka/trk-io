@@ -18,7 +18,6 @@ pub use header::Header;
 pub use reader::Reader;
 pub use writer::Writer;
 
-pub type Dimension = RowVector3<usize>;
 pub type Point = RowVector3<f32>;
 pub type Points = Vec<Point>;
 pub type Affine = Matrix3<f32>;
