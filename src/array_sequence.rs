@@ -157,6 +157,13 @@ impl<T> Extend<T> for ArraySequence<T> {
     }
 }
 
+impl<T: Clone> ArraySequence<T> {
+    pub fn extend_from_slice(&mut self, other: &[T]) {
+        self.data.extend_from_slice(other);
+        self.end_push();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -280,6 +287,11 @@ mod tests {
         assert_eq!(arr.length_of_array(1), 5);
         assert_eq!(arr[1].len(), 5);
         assert_eq!(arr.offsets, vec![0, 10, 15]);
+
+        arr.extend_from_slice(&[20, 21, 22, 23]);
+        assert_eq!(arr.len(), 3);
+        assert_eq!(arr[2].len(), 4);
+        assert_eq!(arr.offsets, vec![0, 10, 15, 19]);
     }
 
     #[test]
