@@ -125,13 +125,6 @@ impl<T> ArraySequence<T> {
         }
     }
 
-    pub fn extend<I>(&mut self, iter: I)
-        where I: IntoIterator<Item = T>
-    {
-        self.data.extend(iter);
-        self.end_push();
-    }
-
     pub fn len(&self) -> usize {
         self.offsets.len() - 1
     }
@@ -154,6 +147,20 @@ impl<T> ArraySequence<T> {
             }
         }
         new
+    }
+}
+
+impl<T> Extend<T> for ArraySequence<T> {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        self.data.extend(iter);
+        self.end_push();
+    }
+}
+
+impl<T: Clone> ArraySequence<T> {
+    pub fn extend_from_slice(&mut self, other: &[T]) {
+        self.data.extend_from_slice(other);
+        self.end_push();
     }
 }
 
@@ -280,6 +287,11 @@ mod tests {
         assert_eq!(arr.length_of_array(1), 5);
         assert_eq!(arr[1].len(), 5);
         assert_eq!(arr.offsets, vec![0, 10, 15]);
+
+        arr.extend_from_slice(&[20, 21, 22, 23]);
+        assert_eq!(arr.len(), 3);
+        assert_eq!(arr[2].len(), 4);
+        assert_eq!(arr.offsets, vec![0, 10, 15, 19]);
     }
 
     #[test]
