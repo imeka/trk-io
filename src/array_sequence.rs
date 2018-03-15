@@ -125,13 +125,6 @@ impl<T> ArraySequence<T> {
         }
     }
 
-    pub fn extend<I>(&mut self, iter: I)
-        where I: IntoIterator<Item = T>
-    {
-        self.data.extend(iter);
-        self.end_push();
-    }
-
     pub fn len(&self) -> usize {
         self.offsets.len() - 1
     }
@@ -154,6 +147,13 @@ impl<T> ArraySequence<T> {
             }
         }
         new
+    }
+}
+
+impl<T> Extend<T> for ArraySequence<T> {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        self.data.extend(iter);
+        self.end_push();
     }
 }
 
