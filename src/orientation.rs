@@ -17,6 +17,12 @@ furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software. */
 
+/* The ideas in this file were taken from the NiBabel project, which is MIT
+licensed. The port to Rust has been done by:
+
+Copyright (c) 2017-2018 Nil Goyette <nil.goyette@gmail.com>
+*/
+
 use std::f32;
 
 use nalgebra::{RowVector3, Vector4};
@@ -39,7 +45,7 @@ impl Direction {
 pub type Orientation = (usize, Direction);
 pub type Orientations = [Orientation; 3];
 
-/// Axis direction codes for affine `aff`
+/// Axis direction codes for affine `affine`
 pub fn affine_to_axcodes(affine: &Affine) -> String {
     let orientations = io_orientations(affine);
     orientations_to_axcodes(orientations)
@@ -47,12 +53,12 @@ pub fn affine_to_axcodes(affine: &Affine) -> String {
 
 /// Orientation of input axes in terms of output axes for `affine`
 ///
-/// Valid for an affine transformation from ``p`` dimensions to ``q``
-/// dimensions (``affine.shape == (q + 1, p + 1)``).
+/// Valid for an affine transformation from `p` dimensions to `q` dimensions
+/// (`affine.shape == (q + 1, p + 1)`).
 ///
-/// The calculated orientations can be used to transform associated arrays
-/// to best match the output orientations. If ``p`` > ``q``, then some of
-/// the output axes should be considered dropped in this orientation.
+/// The calculated orientations can be used to transform associated arrays to
+/// best match the output orientations. If `p` > `q`, then some of the output
+/// axes should be considered dropped in this orientation.
 fn io_orientations(affine: &Affine) -> Orientations {
     // Extract the underlying rotation, zoom, shear matrix
     let rzs2 = affine.component_mul(affine);
@@ -63,15 +69,15 @@ fn io_orientations(affine: &Affine) -> Orientations {
 
     // Zooms can be zero, in which case all elements in the column are zero,
     // and we can leave them as they are
-    zooms.apply(|z| if z == 0.0 {1.0} else {z});
+    zooms.apply(|z| if z == 0.0 { 1.0 } else { z });
 
     let rs = Affine::new(
         affine[0] / zooms[0], affine[3] / zooms[1], affine[6] / zooms[2],
         affine[1] / zooms[0], affine[4] / zooms[1], affine[7] / zooms[2],
         affine[2] / zooms[0], affine[5] / zooms[1], affine[8] / zooms[2]);
 
-    // Transform below is polar decomposition, returning the closest
-    // shearless matrix R to RS
+    // Transform below is polar decomposition, returning the closest shearless
+    // matrix R to RS
     let svd = rs.svd(true, true);
     let (u, s, v_t) = (svd.u.unwrap(), svd.singular_values, svd.v_t.unwrap());
 
@@ -82,16 +88,16 @@ fn io_orientations(affine: &Affine) -> Orientations {
     let s = Affine::from_rows(&[s.transpose(),
                                 s.transpose(),
                                 s.transpose()]);
-    let u = u.zip_map(&s, |u, s| if s > tol {u} else {0.0});
-    let v_t = v_t.zip_map(&s, |v, s| if s > tol {v} else {0.0});
+    let u = u.zip_map(&s, |u, s| if s > tol { u } else { 0.0 });
+    let v_t = v_t.zip_map(&s, |v, s| if s > tol { v } else { 0.0 });
 
-    // The matrix R is such that np.dot(R, R.T) is projection onto the
-    // columns of P[.., keep] and np.dot(R.T, R) is projection onto the rows
-    // of Qs[keep]. R (== np.dot(R, np.eye(p))) gives rotation of the
-    // unit input vectors to output coordinates. Therefore, the row
-    // index of abs max R[.., N], is the output axis changing most as input
-    // axis N changes. In case there are ties, we choose the axes
-    // iteratively, removing used axes from consideration as we go
+    // The matrix R is such that np.dot(R, R.T) is projection onto the columns
+    // of P[.., keep] and np.dot(R.T, R) is projection onto the rows of
+    // Qs[keep]. R (== np.dot(R, np.eye(p))) gives rotation of the unit input
+    // vectors to output coordinates. Therefore, the row index of abs max
+    // R[.., N], is the output axis changing most as input axis N changes. In
+    // case there are ties, we choose the axes iteratively, removing used axes
+    // from consideration as we go
     let mut r = u * v_t;
 
     let mut orientations = [(0, Direction::Normal),
@@ -116,15 +122,15 @@ fn io_orientations(affine: &Affine) -> Orientations {
             orientations[c] = (argmax, Direction::Reversed);
         }
 
-        // Remove the identified axis from further consideration, by
-        // zeroing out the corresponding row in R
+        // Remove the identified axis from further consideration, by zeroing
+        // out the corresponding row in R
         for e in r.column_mut(c).iter_mut() { *e = 0.0; }
     }
 
     orientations
 }
 
-/// Convert orientation `ornt` to labels for axis directions
+/// Convert orientation `orientations` to labels for axis directions
 fn orientations_to_axcodes(orientations: Orientations) -> String {
     let labels = [("L".to_string(), "R".to_string()),
                   ("P".to_string(), "A".to_string()),
@@ -159,11 +165,12 @@ pub fn axcodes_to_orientations(axcodes: &str) -> Orientations {
     orientations
 }
 
-/// Return the orientation that transforms from `start_ornt` to `end_ornt`
+/// Return the orientation that transforms from `start_orientations` to
+/// `end_orientations`
 pub fn orientations_transform(
     start_orientations: &Orientations,
-    end_orientations: &Orientations) -> Orientations
-{
+    end_orientations: &Orientations
+) -> Orientations {
     let mut result = [(0, Direction::Normal),
                       (0, Direction::Normal),
                       (0, Direction::Normal)];
@@ -182,13 +189,13 @@ pub fn orientations_transform(
     result
 }
 
-/// Affine transform reversing transforms implied in `ornt`
+/// Affine transform reversing transforms implied in `orientations`
 ///
-/// Imagine you have an array ``arr`` of shape `shape`, and you apply the
-/// transforms implied by `ornt` (more below), to get ``tarr``. ``tarr`` may
-/// have a different shape ``shape_prime``. This routine returns the affine
-/// that will take a array coordinate for ``tarr`` and give you the
-/// corresponding array coordinate in ``arr``.
+/// Imagine you have an array `arr` of shape `shape`, and you apply the
+/// transforms implied by `orientations`, to get `tarr`. `tarr` may have a
+/// different shape `shape_prime`. This routine returns the affine that will
+/// take an array coordinate for `tarr` and give you the corresponding array
+/// coordinate in `arr`.
 pub fn inverse_orientations_affine(
     orientations: &Orientations,
     dim: [i16; 3]
