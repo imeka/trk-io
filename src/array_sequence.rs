@@ -87,6 +87,10 @@ impl<T> ArraySequence<T> {
         ArraySequence { offsets: vec![0], data: vec![] }
     }
 
+    pub fn with_capacity(n: usize) -> ArraySequence<T> {
+        ArraySequence { offsets: vec![0], data: Vec::with_capacity(n) }
+    }
+
     pub fn new(
         lengths: Vec<usize>,
         data: Vec<T>
