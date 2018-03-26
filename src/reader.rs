@@ -1,6 +1,7 @@
 
 use std::fs::{File};
 use std::io::BufReader;
+use std::path::Path;
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 
@@ -19,7 +20,7 @@ pub struct Reader {
 }
 
 impl Reader {
-    pub fn new(path: &str) -> Reader {
+    pub fn new<P: AsRef<Path>>(path: P) -> Reader {
         let f = File::open(path).expect("Can't read trk file.");
         let mut reader = BufReader::new(f);
 

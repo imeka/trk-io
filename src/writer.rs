@@ -1,6 +1,7 @@
 
 use std::fs::File;
 use std::io::BufWriter;
+use std::path::Path;
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
@@ -16,7 +17,7 @@ pub struct Writer {
 }
 
 impl Writer {
-    pub fn new(path: &str, reference: Option<Header>) -> Writer {
+    pub fn new<P: AsRef<Path>>(path: P, reference: Option<Header>) -> Writer {
         let f = File::create(path).expect("Can't create new trk file.");
         let mut writer = BufWriter::new(f);
 
