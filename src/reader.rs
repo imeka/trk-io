@@ -65,7 +65,7 @@ impl Reader {
         // so there won't be any useless allocation.
         let nb_floats = nb_points * self.nb_floats_per_point;
         self.float_buffer.resize(nb_floats as usize, 0.0);
-        self.reader.read_f32_into_unchecked::<E>(
+        self.reader.read_f32_into::<E>(
             self.float_buffer.as_mut_slice()).unwrap();
 
         for floats in self.float_buffer.chunks(self.nb_floats_per_point) {
