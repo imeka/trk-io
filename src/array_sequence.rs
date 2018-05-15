@@ -152,6 +152,14 @@ impl<T> ArraySequence<T> {
         }
         new
     }
+
+    pub fn iter(&self) -> ArraySequenceIterator<T> {
+        self.into_iter()
+    }
+
+    pub fn iter_mut(&mut self) -> ArraySequenceIteratorMut<T> {
+        self.into_iter()
+    }
 }
 
 impl<T> Extend<T> for ArraySequence<T> {
@@ -248,15 +256,12 @@ mod tests {
                  Point::new(0.0, 3.0, 0.0),
                  Point::new(0.0, 0.0, 1.0),
                  Point::new(0.0, 0.0, 2.0)]);
-        // TODO Use enumerate
-        let mut i = 0;
-        for streamline in &mut streamlines {
+        for (i, streamline) in streamlines.iter_mut().enumerate() {
             for p in streamline {
                 if i % 2 == 0 {
                     *p = Point::zeros();
                 }
             }
-            i += 1;
         }
         let mut iter = streamlines.into_iter();
         assert_eq!(iter.next().unwrap(), [Point::zeros(), Point::zeros()]);
