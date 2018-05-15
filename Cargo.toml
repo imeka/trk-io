@@ -18,7 +18,7 @@ byteorder = "1.2"
 nalgebra = "0.14"
 
 [dev-dependencies]
-docopt = "0.8"
+docopt = "1.0"
 rand = "0.4"
 tempdir = "0.3"
 
