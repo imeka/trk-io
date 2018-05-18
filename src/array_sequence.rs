@@ -1,6 +1,6 @@
 
 use std::mem;
-use std::ops::Index;
+use std::ops::{Index, Range};
 use std::slice;
 use std::vec::Vec;
 
@@ -17,26 +17,22 @@ impl<'a, T> IntoIterator for &'a ArraySequence<T> {
     fn into_iter(self) -> Self::IntoIter {
         ArraySequenceIterator {
             arr: self,
-            it_idx: 0
+            index: 0..self.len()
         }
     }
 }
 
 pub struct ArraySequenceIterator<'a, T: 'a> {
     arr: &'a ArraySequence<T>,
-    it_idx: usize
+    index: Range<usize>
 }
 
 impl<'a, T> Iterator for ArraySequenceIterator<'a, T> {
     type Item = &'a [T];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.it_idx < self.arr.offsets.len() - 1 {
-            self.it_idx += 1;
-            Some(&self.arr[self.it_idx - 1])
-        } else {
-            None
-        }
+        let idx = self.index.next()?;
+        Some(&self.arr[idx])
     }
 }
 
