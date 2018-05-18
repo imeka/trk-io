@@ -191,6 +191,19 @@ mod tests {
     use nalgebra::RowVector3;
     pub type Point = RowVector3<f32>;
 
+    fn get_toy_streamlines() -> ArraySequence<Point> {
+        ArraySequence::new(
+            vec![2, 3, 3],
+            vec![Point::new(1.0, 0.0, 0.0),
+                 Point::new(2.0, 0.0, 0.0),
+                 Point::new(0.0, 1.0, 0.0),
+                 Point::new(0.0, 2.0, 0.0),
+                 Point::new(0.0, 3.0, 0.0),
+                 Point::new(0.0, 0.0, 1.0),
+                 Point::new(0.0, 0.0, 2.0),
+                 Point::new(0.0, 0.0, 3.0)])
+    }
+
     #[test]
     fn test_integers() {
         let arr = ArraySequence::new(
@@ -202,17 +215,9 @@ mod tests {
 
     #[test]
     fn test_construction() {
-        let arr = ArraySequence::new(
-            vec![2, 3, 2],
-            vec![Point::new(1.0, 0.0, 0.0),
-                 Point::new(2.0, 0.0, 0.0),
-                 Point::new(0.0, 1.0, 0.0),
-                 Point::new(0.0, 2.0, 0.0),
-                 Point::new(0.0, 3.0, 0.0),
-                 Point::new(0.0, 0.0, 1.0),
-                 Point::new(0.0, 0.0, 2.0)]);
-        assert_eq!(arr.len(), 3);
-        assert_eq!(arr.offsets, vec![0, 2, 5, 7]);
+        let streamlines = get_toy_streamlines();
+        assert_eq!(streamlines.len(), 3);
+        assert_eq!(streamlines.offsets, vec![0, 2, 5, 8]);
     }
 
     #[test]
@@ -235,14 +240,8 @@ mod tests {
 
     #[test]
     fn test_iterator() {
-        let arr = ArraySequence::new(
-            vec![2, 3],
-            vec![Point::new(1.0, 0.0, 0.0),
-                 Point::new(2.0, 0.0, 0.0),
-                 Point::new(0.0, 1.0, 0.0),
-                 Point::new(0.0, 2.0, 0.0),
-                 Point::new(0.0, 3.0, 0.0)]);
-        let mut iter = arr.into_iter();
+        let streamlines = get_toy_streamlines();
+        let mut iter = streamlines.into_iter();
         assert_eq!(iter.next().unwrap(),
                    [Point::new(1.0, 0.0, 0.0),
                     Point::new(2.0, 0.0, 0.0)]);
@@ -250,35 +249,26 @@ mod tests {
                    [Point::new(0.0, 1.0, 0.0),
                     Point::new(0.0, 2.0, 0.0),
                     Point::new(0.0, 3.0, 0.0)]);
+        assert_eq!(iter.next().unwrap(),
+                   [Point::new(0.0, 0.0, 1.0),
+                    Point::new(0.0, 0.0, 2.0),
+                    Point::new(0.0, 0.0, 3.0)]);
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
     }
 
     #[test]
     fn test_reverse_iterator() {
-        let arr = ArraySequence::new(
-            vec![2, 3],
-            vec![Point::new(1.0, 0.0, 0.0),
-                 Point::new(2.0, 0.0, 0.0),
-                 Point::new(0.0, 1.0, 0.0),
-                 Point::new(0.0, 2.0, 0.0),
-                 Point::new(0.0, 3.0, 0.0)]);
-        assert_eq!(
-            arr.iter().rev().map(|streamline| streamline.len()).collect::<Vec<_>>(),
-            vec![3, 2]);
+        let streamlines = get_toy_streamlines();
+        let lengths = streamlines.iter().rev().map(
+            |streamline| streamline.len()
+        ).collect::<Vec<_>>();
+        assert_eq!(lengths, vec![3, 3, 2]);
     }
 
     #[test]
     fn test_iterator_mut() {
-        let mut streamlines = ArraySequence::new(
-            vec![2, 3, 2],
-            vec![Point::new(1.0, 0.0, 0.0),
-                 Point::new(2.0, 0.0, 0.0),
-                 Point::new(0.0, 1.0, 0.0),
-                 Point::new(0.0, 2.0, 0.0),
-                 Point::new(0.0, 3.0, 0.0),
-                 Point::new(0.0, 0.0, 1.0),
-                 Point::new(0.0, 0.0, 2.0)]);
+        let mut streamlines = get_toy_streamlines();
         for (i, streamline) in streamlines.iter_mut().enumerate() {
             for p in streamline {
                 if i % 2 == 0 {
@@ -286,12 +276,15 @@ mod tests {
                 }
             }
         }
+
         let mut iter = streamlines.into_iter();
         assert_eq!(iter.next().unwrap(), [Point::zeros(), Point::zeros()]);
         assert_eq!(iter.next().unwrap(), [Point::new(0.0, 1.0, 0.0),
                                           Point::new(0.0, 2.0, 0.0),
                                           Point::new(0.0, 3.0, 0.0)]);
-        assert_eq!(iter.next().unwrap(), [Point::zeros(), Point::zeros()]);
+        assert_eq!(
+            iter.next().unwrap(),
+            [Point::zeros(), Point::zeros(), Point::zeros()]);
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
     }
