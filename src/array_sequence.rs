@@ -34,6 +34,10 @@ impl<'a, T> Iterator for ArraySequenceIterator<'a, T> {
         let idx = self.index.next()?;
         Some(&self.arr[idx])
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(self.arr.len()))
+    }
 }
 
 impl<'a, T> IntoIterator for &'a mut ArraySequence<T> {
@@ -65,6 +69,15 @@ impl<'a, T> Iterator for ArraySequenceIteratorMut<'a, T> {
         let (slice, remaining_data) = data.split_at_mut(nb_elements);
         self.data = remaining_data;
         Some(slice)
+    }
+}
+
+impl<'data, T> ExactSizeIterator for ArraySequenceIterator<'data, T> {}
+
+impl<'data, T> DoubleEndedIterator for ArraySequenceIterator<'data, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        let idx = self.index.next_back()?;
+        Some(&self.arr[idx])
     }
 }
 
@@ -239,6 +252,20 @@ mod tests {
                     Point::new(0.0, 3.0, 0.0)]);
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_reverse_iterator() {
+        let arr = ArraySequence::new(
+            vec![2, 3],
+            vec![Point::new(1.0, 0.0, 0.0),
+                 Point::new(2.0, 0.0, 0.0),
+                 Point::new(0.0, 1.0, 0.0),
+                 Point::new(0.0, 2.0, 0.0),
+                 Point::new(0.0, 3.0, 0.0)]);
+        assert_eq!(
+            arr.iter().rev().map(|streamline| streamline.len()).collect::<Vec<_>>(),
+            vec![3, 2]);
     }
 
     #[test]
