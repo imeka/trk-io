@@ -7,7 +7,7 @@ use std::path::Path;
 use std::str;
 
 use docopt::Docopt;
-use rand::distributions::{Range, Sample};
+use rand::Rng;
 
 use trk_io::{Reader, Writer};
 
@@ -43,10 +43,9 @@ fn main() {
     if let Ok(percent) = args.get_str("--percent").parse::<f32>() {
         let percent = percent / 100.0;
         let mut rng = rand::thread_rng();
-        let mut between = Range::new(0.0, 1.0);
 
         for streamline in reader.into_iter() {
-            if between.sample(&mut rng) < percent {
+            if rng.gen::<f32>() < percent {
                 writer.write(&streamline);
             }
         }

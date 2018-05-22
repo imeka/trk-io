@@ -19,7 +19,7 @@ nalgebra = "0.14"
 
 [dev-dependencies]
 docopt = "1.0"
-rand = "0.4"
+rand = "0.5"
 tempdir = "0.3"
 
 [dependencies.nifti]
