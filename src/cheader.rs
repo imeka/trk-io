@@ -82,9 +82,10 @@ impl CHeader {
         }
     }
 
-    pub fn seek_n_count_field(f: &mut BufWriter<File>) {
+    pub fn seek_n_count_field(f: &mut BufWriter<File>) -> Result<()> {
         let n_count_offset = (HEADER_SIZE - 12) as u64;
-        f.seek(SeekFrom::Start(n_count_offset)).unwrap();
+        f.seek(SeekFrom::Start(n_count_offset))?;
+        Ok(())
     }
 
     pub fn get_scalars_name(&self) -> Vec<String> {

@@ -76,7 +76,9 @@ impl Writer {
 // Finally write `n_count`
 impl Drop for Writer {
     fn drop(&mut self) {
-        CHeader::seek_n_count_field(&mut self.writer);
-        self.writer.write_i32::<LittleEndian>(self.real_n_count).unwrap();
+        CHeader::seek_n_count_field(&mut self.writer).expect(
+            "Unable to seek to 'n_count' field before closing trk file.");
+        self.writer.write_i32::<LittleEndian>(self.real_n_count).expect(
+            "Unable to write 'n_count' field before closing trk file.");
     }
 }
