@@ -1,6 +1,6 @@
 
 use std::fs::{File};
-use std::io::{BufReader};
+use std::io::{BufReader, Result};
 
 use byteorder::{WriteBytesExt};
 #[cfg(feature = "use_nifti")] use nifti::NiftiHeader;
@@ -37,8 +37,8 @@ impl Header {
         }
     }
 
-    pub fn read(reader: &mut BufReader<File>) -> (Header, Endianness) {
-        let (c_header, endianness) = CHeader::read(reader);
+    pub fn read(reader: &mut BufReader<File>) -> Result<(Header, Endianness)> {
+        let (c_header, endianness) = CHeader::read(reader)?;
         let affine4 = c_header.get_affine();
         let (affine, translation) = get_affine_and_translation(&affine4);
         let nb_streamlines = c_header.n_count as usize;
@@ -53,7 +53,7 @@ impl Header {
             c_header, affine4, affine, translation,
             nb_streamlines, scalars, properties
         };
-        (header, endianness)
+        Ok((header, endianness))
     }
 
     pub fn write<W: WriteBytesExt>(&self, writer: &mut W) {

@@ -1,6 +1,5 @@
-
-use std::fs::{File};
-use std::io::BufReader;
+use std::fs::File;
+use std::io::{BufReader, Result};
 use std::path::Path;
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
@@ -20,19 +19,19 @@ pub struct Reader {
 }
 
 impl Reader {
-    pub fn new<P: AsRef<Path>>(path: P) -> Reader {
+    pub fn new<P: AsRef<Path>>(path: P) -> Result<Reader> {
         let f = File::open(path).expect("Can't read trk file.");
         let mut reader = BufReader::new(f);
 
-        let (header, endianness) = Header::read(&mut reader);
+        let (header, endianness) = Header::read(&mut reader)?;
         let affine = header.affine;
         let translation = header.translation;
         let nb_floats_per_point = 3 + header.scalars.len() as usize;
 
-        Reader {
+        Ok(Reader {
             reader, endianness, header, affine, translation,
             nb_floats_per_point, float_buffer: Vec::with_capacity(300)
-        }
+        })
     }
 
     pub fn read_all(&mut self) -> Streamlines {

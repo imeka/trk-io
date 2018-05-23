@@ -12,6 +12,6 @@ pub fn get_random_trk_path() -> String {
 }
 
 pub fn load_trk(path: &str) -> (Header, Streamlines) {
-    let mut reader = Reader::new(path);
+    let mut reader = Reader::new(path).unwrap();
     (reader.header.clone(), reader.read_all())
 }

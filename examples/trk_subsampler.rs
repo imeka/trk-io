@@ -36,7 +36,7 @@ fn main() {
         panic!("Input trk '{:?}' doesn't exist.", input);
     }
 
-    let reader = Reader::new(args.get_str("<input>"));
+    let reader = Reader::new(args.get_str("<input>")).expect("Read header");
     let mut writer = Writer::new(
         args.get_str("<output>"), Some(reader.header.clone()));
 
