@@ -127,6 +127,7 @@ fn test_load_complex_big_endian() {
     assert_eq!(streamlines[0], first);
     assert_eq!(streamlines[1], second);
     assert_eq!(streamlines[2], third);
+    check_complex_scalars_and_properties(reader.header);
 
     // Test generator
     for (i, streamline) in Reader::new(
@@ -141,8 +142,6 @@ fn test_load_complex_big_endian() {
             panic!("Failed test.");
         }
     }
-
-    check_complex_scalars_and_properties(reader.header);
 }
 
 fn check_complex_scalars_and_properties(header: Header) {
