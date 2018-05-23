@@ -38,7 +38,7 @@ fn main() {
 
     let reader = Reader::new(args.get_str("<input>")).expect("Read header");
     let mut writer = Writer::new(
-        args.get_str("<output>"), Some(reader.header.clone()));
+        args.get_str("<output>"), Some(reader.header.clone())).unwrap();
 
     if let Ok(percent) = args.get_str("--percent").parse::<f32>() {
         let percent = percent / 100.0;

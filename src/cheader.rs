@@ -183,7 +183,7 @@ impl CHeader {
         Ok(header)
     }
 
-    pub fn write<W: WriteBytesExt>(&self, writer: &mut W) {
+    pub fn write<W: WriteBytesExt>(&self, writer: &mut W) -> Result<()> {
         // Because we don't handle scalars and properties for now, we must
         // erase them from the header. We can't actually erase them without
         // being `mut` though, so we write a modified copy.
@@ -195,39 +195,41 @@ impl CHeader {
             ..self.clone()
         };
 
-        writer.write(&header.id_string).unwrap();
+        writer.write(&header.id_string)?;
         for i in &header.dim {
-            writer.write_i16::<LittleEndian>(*i).unwrap();
+            writer.write_i16::<LittleEndian>(*i)?;
         }
         for f in &header.voxel_size {
-            writer.write_f32::<LittleEndian>(*f).unwrap();
+            writer.write_f32::<LittleEndian>(*f)?;
         }
         for f in &header.origin {
-            writer.write_f32::<LittleEndian>(*f).unwrap();
+            writer.write_f32::<LittleEndian>(*f)?;
         }
-        writer.write_i16::<LittleEndian>(header.n_scalars).unwrap();
-        writer.write(&header.scalar_name).unwrap();
-        writer.write_i16::<LittleEndian>(header.n_properties).unwrap();
-        writer.write(&header.property_name).unwrap();
+        writer.write_i16::<LittleEndian>(header.n_scalars)?;
+        writer.write(&header.scalar_name)?;
+        writer.write_i16::<LittleEndian>(header.n_properties)?;
+        writer.write(&header.property_name)?;
         for f in &header.vox_to_ras {
-            writer.write_f32::<LittleEndian>(*f).unwrap();
+            writer.write_f32::<LittleEndian>(*f)?;
         }
-        writer.write(&header.reserved).unwrap();
-        writer.write(&header.voxel_order).unwrap();
-        writer.write(&header.pad2).unwrap();
+        writer.write(&header.reserved)?;
+        writer.write(&header.voxel_order)?;
+        writer.write(&header.pad2)?;
         for f in &header.image_orientation_patient {
-            writer.write_f32::<LittleEndian>(*f).unwrap();
+            writer.write_f32::<LittleEndian>(*f)?;
         }
-        writer.write(&header.pad1).unwrap();
-        writer.write_u8(header.invert_x).unwrap();
-        writer.write_u8(header.invert_y).unwrap();
-        writer.write_u8(header.invert_z).unwrap();
-        writer.write_u8(header.swap_x).unwrap();
-        writer.write_u8(header.swap_y).unwrap();
-        writer.write_u8(header.swap_z).unwrap();
-        writer.write_i32::<LittleEndian>(header.n_count).unwrap();
-        writer.write_i32::<LittleEndian>(header.version).unwrap();
-        writer.write_i32::<LittleEndian>(header.hdr_size).unwrap();
+        writer.write(&header.pad1)?;
+        writer.write_u8(header.invert_x)?;
+        writer.write_u8(header.invert_y)?;
+        writer.write_u8(header.invert_z)?;
+        writer.write_u8(header.swap_x)?;
+        writer.write_u8(header.swap_y)?;
+        writer.write_u8(header.swap_z)?;
+        writer.write_i32::<LittleEndian>(header.n_count)?;
+        writer.write_i32::<LittleEndian>(header.version)?;
+        writer.write_i32::<LittleEndian>(header.hdr_size)?;
+
+        Ok(())
     }
 }
 

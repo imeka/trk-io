@@ -19,7 +19,8 @@ mod nifti_tests {
         let write_to = get_random_trk_path();
 
         {
-            let mut writer = Writer::new(&write_to, Some(Header::from_nifti(&header)));
+            let mut writer = Writer::new(
+                &write_to, Some(Header::from_nifti(&header))).unwrap();
             writer.apply_affine(&raw_affine_from_nifti(&header));
             writer.write(&[Point::new(13.75, 27.90, 51.55),
                            Point::new(14.00, 27.95, 51.98),

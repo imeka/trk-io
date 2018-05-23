@@ -56,8 +56,8 @@ impl Header {
         Ok((header, endianness))
     }
 
-    pub fn write<W: WriteBytesExt>(&self, writer: &mut W) {
-        self.c_header.write(writer);
+    pub fn write<W: WriteBytesExt>(&self, writer: &mut W) -> Result<()> {
+        Ok(self.c_header.write(writer)?)
     }
 }
 
