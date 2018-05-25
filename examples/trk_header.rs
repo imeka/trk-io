@@ -37,7 +37,8 @@ fn main() {
 
     let f = File::open(args.get_str("<input>")).expect("Can't read trk file.");
     let mut reader = BufReader::new(f);
-    let (header, endianness) = CHeader::read(&mut reader);
+    let (header, endianness) = CHeader::read(&mut reader)
+        .expect("Read header");
 
     if print_all {
         println!("---------- Actual fields ----------");

@@ -14,7 +14,8 @@ fn test_write_dynamic() {
     let (original_header, original_streamlines) = load_trk("data/simple.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()));
+        let mut writer = Writer::new(
+            &write_to, Some(original_header.clone())).unwrap();
         writer.write_from_iter(
             [Point::new(0.0, 1.0, 2.0)].iter().cloned(), 1);
 
@@ -39,7 +40,8 @@ fn test_write_empty() {
     let (original_header, original_streamlines) = load_trk("data/empty.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()));
+        let mut writer = Writer::new(
+            &write_to, Some(original_header.clone())).unwrap();
         writer.write_all(&Streamlines::new(vec![], vec![]));
     }
 
@@ -54,7 +56,8 @@ fn test_write_simple() {
     let (original_header, original_streamlines) = load_trk("data/simple.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()));
+        let mut writer = Writer::new(
+            &write_to, Some(original_header.clone())).unwrap();
         writer.write_all(&original_streamlines);
     }
 
@@ -70,7 +73,8 @@ fn test_write_standard() {
         load_trk("data/standard.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()));
+        let mut writer = Writer::new(
+            &write_to, Some(original_header.clone())).unwrap();
         writer.write(&original_streamlines[0]);
         writer.write(&original_streamlines[1]);
         writer.write(&original_streamlines[2]);
@@ -90,7 +94,8 @@ fn test_write_standard_lps() {
         load_trk("data/standard.LPS.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()));
+        let mut writer = Writer::new(
+            &write_to, Some(original_header.clone())).unwrap();
         assert_eq!(writer.affine4, Affine4::new(-1.0, 0.0, 0.0, 3.5,
                                                 0.0, -1.0, 0.0, 13.5,
                                                 0.0, 0.0, 1.0, 1.0,
@@ -120,7 +125,8 @@ fn test_write_complex() {
     let (original_header, original_streamlines) = load_trk("data/complex.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()));
+        let mut writer = Writer::new(
+            &write_to, Some(original_header.clone())).unwrap();
         writer.write_all(&original_streamlines);
     }
 

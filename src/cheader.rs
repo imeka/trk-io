@@ -1,7 +1,7 @@
 
 use std::fmt;
 use std::fs::{File};
-use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom};
+use std::io::{BufReader, BufWriter, Read, Result, Seek, SeekFrom};
 use std::str::from_utf8;
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian,
@@ -82,9 +82,10 @@ impl CHeader {
         }
     }
 
-    pub fn seek_n_count_field(f: &mut BufWriter<File>) {
+    pub fn seek_n_count_field(f: &mut BufWriter<File>) -> Result<()> {
         let n_count_offset = (HEADER_SIZE - 12) as u64;
-        f.seek(SeekFrom::Start(n_count_offset)).unwrap();
+        f.seek(SeekFrom::Start(n_count_offset))?;
+        Ok(())
     }
 
     pub fn get_scalars_name(&self) -> Vec<String> {
@@ -127,63 +128,63 @@ impl CHeader {
         voxel_to_rasmm * affine
     }
 
-    pub fn read_from_file(path: &str) -> (CHeader, Endianness) {
+    pub fn read_from_file(path: &str) -> Result<(CHeader, Endianness)> {
         let f = File::open(path).expect("Can't read trk file.");
         let mut reader = BufReader::new(f);
         CHeader::read(&mut reader)
     }
 
-    pub fn read(reader: &mut BufReader<File>) -> (CHeader, Endianness) {
-        reader.seek(SeekFrom::Start(0)).unwrap();
-        let endianness = test_endianness(reader);
+    pub fn read(reader: &mut BufReader<File>) -> Result<(CHeader, Endianness)> {
+        reader.seek(SeekFrom::Start(0))?;
+        let endianness = test_endianness(reader)?;
         let header = match endianness {
-            Endianness::Little => CHeader::read_::<LittleEndian>(reader),
-            Endianness::Big => CHeader::read_::<BigEndian>(reader)
+            Endianness::Little => CHeader::read_::<LittleEndian>(reader)?,
+            Endianness::Big => CHeader::read_::<BigEndian>(reader)?
         };
-        (header, endianness)
+        Ok((header, endianness))
     }
 
-    fn read_<E: ByteOrder>(reader: &mut BufReader<File>) -> CHeader {
+    fn read_<E: ByteOrder>(reader: &mut BufReader<File>) -> Result<CHeader> {
         let mut header = CHeader::default();
 
-        reader.read_exact(&mut header.id_string).unwrap();
+        reader.read_exact(&mut header.id_string)?;
         for i in &mut header.dim {
-            *i = reader.read_i16::<E>().unwrap();
+            *i = reader.read_i16::<E>()?;
         }
         for f in &mut header.voxel_size {
-            *f = reader.read_f32::<E>().unwrap();
+            *f = reader.read_f32::<E>()?;
         }
         for f in &mut header.origin {
-            *f = reader.read_f32::<E>().unwrap();
+            *f = reader.read_f32::<E>()?;
         }
-        header.n_scalars = reader.read_i16::<E>().unwrap();
-        reader.read_exact(&mut header.scalar_name).unwrap();
-        header.n_properties = reader.read_i16::<E>().unwrap();
-        reader.read_exact(&mut header.property_name).unwrap();
+        header.n_scalars = reader.read_i16::<E>()?;
+        reader.read_exact(&mut header.scalar_name)?;
+        header.n_properties = reader.read_i16::<E>()?;
+        reader.read_exact(&mut header.property_name)?;
         for f in &mut header.vox_to_ras {
-            *f = reader.read_f32::<E>().unwrap();
+            *f = reader.read_f32::<E>()?;
         }
-        reader.read_exact(&mut header.reserved).unwrap();
-        reader.read_exact(&mut header.voxel_order).unwrap();
-        reader.read_exact(&mut header.pad2).unwrap();
+        reader.read_exact(&mut header.reserved)?;
+        reader.read_exact(&mut header.voxel_order)?;
+        reader.read_exact(&mut header.pad2)?;
         for f in &mut header.image_orientation_patient {
-            *f = reader.read_f32::<E>().unwrap();
+            *f = reader.read_f32::<E>()?;
         }
-        reader.read_exact(&mut header.pad1).unwrap();
-        header.invert_x = reader.read_u8().unwrap();
-        header.invert_y = reader.read_u8().unwrap();
-        header.invert_z = reader.read_u8().unwrap();
-        header.swap_x = reader.read_u8().unwrap();
-        header.swap_y = reader.read_u8().unwrap();
-        header.swap_z = reader.read_u8().unwrap();
-        header.n_count = reader.read_i32::<E>().unwrap();
-        header.version = reader.read_i32::<E>().unwrap();
-        header.hdr_size = reader.read_i32::<E>().unwrap();
+        reader.read_exact(&mut header.pad1)?;
+        header.invert_x = reader.read_u8()?;
+        header.invert_y = reader.read_u8()?;
+        header.invert_z = reader.read_u8()?;
+        header.swap_x = reader.read_u8()?;
+        header.swap_y = reader.read_u8()?;
+        header.swap_z = reader.read_u8()?;
+        header.n_count = reader.read_i32::<E>()?;
+        header.version = reader.read_i32::<E>()?;
+        header.hdr_size = reader.read_i32::<E>()?;
 
-        header
+        Ok(header)
     }
 
-    pub fn write<W: WriteBytesExt>(&self, writer: &mut W) {
+    pub fn write<W: WriteBytesExt>(&self, writer: &mut W) -> Result<()> {
         // Because we don't handle scalars and properties for now, we must
         // erase them from the header. We can't actually erase them without
         // being `mut` though, so we write a modified copy.
@@ -195,39 +196,41 @@ impl CHeader {
             ..self.clone()
         };
 
-        writer.write(&header.id_string).unwrap();
+        writer.write(&header.id_string)?;
         for i in &header.dim {
-            writer.write_i16::<LittleEndian>(*i).unwrap();
+            writer.write_i16::<LittleEndian>(*i)?;
         }
         for f in &header.voxel_size {
-            writer.write_f32::<LittleEndian>(*f).unwrap();
+            writer.write_f32::<LittleEndian>(*f)?;
         }
         for f in &header.origin {
-            writer.write_f32::<LittleEndian>(*f).unwrap();
+            writer.write_f32::<LittleEndian>(*f)?;
         }
-        writer.write_i16::<LittleEndian>(header.n_scalars).unwrap();
-        writer.write(&header.scalar_name).unwrap();
-        writer.write_i16::<LittleEndian>(header.n_properties).unwrap();
-        writer.write(&header.property_name).unwrap();
+        writer.write_i16::<LittleEndian>(header.n_scalars)?;
+        writer.write(&header.scalar_name)?;
+        writer.write_i16::<LittleEndian>(header.n_properties)?;
+        writer.write(&header.property_name)?;
         for f in &header.vox_to_ras {
-            writer.write_f32::<LittleEndian>(*f).unwrap();
+            writer.write_f32::<LittleEndian>(*f)?;
         }
-        writer.write(&header.reserved).unwrap();
-        writer.write(&header.voxel_order).unwrap();
-        writer.write(&header.pad2).unwrap();
+        writer.write(&header.reserved)?;
+        writer.write(&header.voxel_order)?;
+        writer.write(&header.pad2)?;
         for f in &header.image_orientation_patient {
-            writer.write_f32::<LittleEndian>(*f).unwrap();
+            writer.write_f32::<LittleEndian>(*f)?;
         }
-        writer.write(&header.pad1).unwrap();
-        writer.write_u8(header.invert_x).unwrap();
-        writer.write_u8(header.invert_y).unwrap();
-        writer.write_u8(header.invert_z).unwrap();
-        writer.write_u8(header.swap_x).unwrap();
-        writer.write_u8(header.swap_y).unwrap();
-        writer.write_u8(header.swap_z).unwrap();
-        writer.write_i32::<LittleEndian>(header.n_count).unwrap();
-        writer.write_i32::<LittleEndian>(header.version).unwrap();
-        writer.write_i32::<LittleEndian>(header.hdr_size).unwrap();
+        writer.write(&header.pad1)?;
+        writer.write_u8(header.invert_x)?;
+        writer.write_u8(header.invert_y)?;
+        writer.write_u8(header.invert_z)?;
+        writer.write_u8(header.swap_x)?;
+        writer.write_u8(header.swap_y)?;
+        writer.write_u8(header.swap_z)?;
+        writer.write_i32::<LittleEndian>(header.n_count)?;
+        writer.write_i32::<LittleEndian>(header.version)?;
+        writer.write_i32::<LittleEndian>(header.hdr_size)?;
+
+        Ok(())
     }
 }
 
@@ -267,18 +270,18 @@ impl Default for CHeader {
 /// Read in LittleEndian, version == 1 or 2.
 /// Read in BigEndian, version == 511 or 767
 /// Even with hundreds major updates, `version` should be safe.
-fn test_endianness(reader: &mut BufReader<File>) -> Endianness {
+fn test_endianness(reader: &mut BufReader<File>) -> Result<Endianness> {
     let version_offset = (HEADER_SIZE - 8) as u64;
-    reader.seek(SeekFrom::Start(version_offset)).unwrap();
-    let version = reader.read_i32::<LittleEndian>().unwrap();
+    reader.seek(SeekFrom::Start(version_offset))?;
+    let version = reader.read_i32::<LittleEndian>()?;
     let endianness = if version <= 255 {
         Endianness::Little
     } else {
         Endianness::Big
     };
-    reader.seek(SeekFrom::Start(0)).unwrap();
+    reader.seek(SeekFrom::Start(0))?;
 
-    endianness
+    Ok(endianness)
 }
 
 /// Returns the names from the [10][20] arrays of bytes.

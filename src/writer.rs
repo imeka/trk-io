@@ -1,6 +1,5 @@
-
 use std::fs::File;
-use std::io::BufWriter;
+use std::io::{BufWriter, Result};
 use std::path::Path;
 
 use byteorder::{LittleEndian, WriteBytesExt};
@@ -17,7 +16,10 @@ pub struct Writer {
 }
 
 impl Writer {
-    pub fn new<P: AsRef<Path>>(path: P, reference: Option<Header>) -> Writer {
+    pub fn new<P: AsRef<Path>>(
+        path: P,
+        reference: Option<Header>
+    ) -> Result<Writer> {
         let f = File::create(path).expect("Can't create new trk file.");
         let mut writer = BufWriter::new(f);
 
@@ -25,13 +27,14 @@ impl Writer {
             Some(r) => r,
             None => Header::default()
         };
-        header.write(&mut writer);
+        header.write(&mut writer)?;
 
         // We are only interested in the inversed affine
-        let affine4 = header.affine4.try_inverse().unwrap();
+        let affine4 = header.affine4.try_inverse().expect(
+            "Unable to inverse 4x4 affine matrix");
         let (affine, translation) = get_affine_and_translation(&affine4);
 
-        Writer { writer, affine4, affine, translation, real_n_count: 0 }
+        Ok(Writer { writer, affine4, affine, translation, real_n_count: 0 })
     }
 
     pub fn apply_affine(&mut self, affine: &Affine4) {
@@ -77,7 +80,9 @@ impl Writer {
 // Finally write `n_count`
 impl Drop for Writer {
     fn drop(&mut self) {
-        CHeader::seek_n_count_field(&mut self.writer);
-        self.writer.write_i32::<LittleEndian>(self.real_n_count).unwrap();
+        CHeader::seek_n_count_field(&mut self.writer).expect(
+            "Unable to seek to 'n_count' field before closing trk file.");
+        self.writer.write_i32::<LittleEndian>(self.real_n_count).expect(
+            "Unable to write 'n_count' field before closing trk file.");
     }
 }

@@ -5,14 +5,15 @@ use trk_io::{Affine, ArraySequence, Header, Point, Reader, Translation};
 
 #[test]
 fn test_load_empty() {
-    let streamlines = Reader::new("data/empty.trk").read_all();
+    let streamlines = Reader::new("data/empty.trk").unwrap().read_all();
     assert_eq!(streamlines.len(), 0);
     for _ in &streamlines {
         panic!("Failed test.");
     }
 
     // Test generator
-    for _ in Reader::new("data/empty.trk").into_iter() {
+    let reader = Reader::new("data/empty.trk").unwrap();
+    for _ in reader.into_iter() {
         panic!("Failed test.");
     }
 }
@@ -27,15 +28,15 @@ fn test_load_simple() {
                  Point::new(9.0, 10.0, 11.0),
                  Point::new(12.0, 13.0, 14.0)];
 
-    let streamlines = Reader::new("data/simple.trk").read_all();
+    let streamlines = Reader::new("data/simple.trk").unwrap().read_all();
     assert_eq!(streamlines.len(), 3);
     assert_eq!(streamlines[0], first);
     assert_eq!(streamlines[1], second);
     assert_eq!(streamlines[2], third);
 
     // Test generator
-    for (i, streamline)
-            in Reader::new("data/empty.trk").into_iter().enumerate() {
+    let reader = Reader::new("data/empty.trk").unwrap();
+    for (i, streamline) in reader.into_iter().enumerate() {
         if i == 0 {
             assert_eq!(streamline, first);
         } else if i == 1 {
@@ -50,7 +51,7 @@ fn test_load_simple() {
 
 #[test]
 fn test_load_standard() {
-    let mut reader = Reader::new("data/standard.trk");
+    let mut reader = Reader::new("data/standard.trk").unwrap();
     let streamlines = reader.read_all();
     assert_eq!(reader.affine, Affine::new(1.0, 0.0, 0.0,
                                           0.0, 1.0, 0.0,
@@ -66,14 +67,15 @@ fn test_load_standard() {
                                 Point::new(0.5, -1.5, 3.0)]);
 
     // Test generator
-    for streamline in Reader::new("data/empty.trk").into_iter() {
+    let reader = Reader::new("data/empty.trk").unwrap();
+    for streamline in reader.into_iter() {
         assert_eq!(streamline.len(), 3);
     }
 }
 
 #[test]
 fn test_load_standard_lps() {
-    let mut reader = Reader::new("data/standard.LPS.trk");
+    let mut reader = Reader::new("data/standard.LPS.trk").unwrap();
     let streamlines = reader.read_all();
     assert_eq!(reader.affine, Affine::new(-1.0, 0.0, 0.0,
                                           0.0, -1.0, 0.0,
@@ -91,7 +93,7 @@ fn test_load_standard_lps() {
 
 #[test]
 fn test_load_complex() {
-    let mut reader = Reader::new("data/complex.trk");
+    let mut reader = Reader::new("data/complex.trk").unwrap();
     let streamlines = reader.read_all();
     assert_eq!(reader.affine, Affine::new(1.0, 0.0, 0.0,
                                           0.0, 1.0, 0.0,
@@ -121,16 +123,17 @@ fn test_load_complex_big_endian() {
                  Point::new(9.0, 10.0, 11.0),
                  Point::new(12.0, 13.0, 14.0)];
 
-    let mut reader = Reader::new("data/complex_big_endian.trk");
+    let mut reader = Reader::new("data/complex_big_endian.trk").unwrap();
     let streamlines = reader.read_all();
     assert_eq!(streamlines.len(), 3);
     assert_eq!(streamlines[0], first);
     assert_eq!(streamlines[1], second);
     assert_eq!(streamlines[2], third);
+    check_complex_scalars_and_properties(reader.header);
 
     // Test generator
-    for (i, streamline) in Reader::new(
-            "data/complex_big_endian.trk").into_iter().enumerate() {
+    let reader = Reader::new("data/complex_big_endian.trk").unwrap();
+    for (i, streamline) in reader.into_iter().enumerate() {
         if i == 0 {
             assert_eq!(streamline, first);
         } else if i == 1 {
@@ -141,8 +144,6 @@ fn test_load_complex_big_endian() {
             panic!("Failed test.");
         }
     }
-
-    check_complex_scalars_and_properties(reader.header);
 }
 
 fn check_complex_scalars_and_properties(header: Header) {
