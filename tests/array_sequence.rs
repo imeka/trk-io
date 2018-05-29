@@ -47,6 +47,23 @@ fn test_new_too_much() {
 }
 
 #[test]
+fn test_empty() {
+    let mut arr = ArraySequence::empty();
+    assert_eq!(arr.is_empty(), true);
+    assert_eq!(arr.len(), 0);
+
+    for _ in 0..2 {
+        arr.push(1);
+        assert_eq!(arr.is_empty(), false);
+        assert_eq!(arr.len(), 0);
+    }
+
+    arr.end_push();
+    assert_eq!(arr.is_empty(), false);
+    assert_eq!(arr.len(), 1);
+}
+
+#[test]
 fn test_iterator() {
     let streamlines = get_toy_streamlines();
     let mut iter = streamlines.into_iter();
