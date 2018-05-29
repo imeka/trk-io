@@ -138,6 +138,15 @@ impl<T> ArraySequence<T> {
         }
     }
 
+    /// Returns `true` if the array contains no elements.
+    ///
+    /// The array will be considered non empty if there was one or more
+    /// `push()`, even without an `end_push()`. Use `len()` instead to ignore
+    /// all pushed elements.
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
     pub fn len(&self) -> usize {
         self.offsets.len() - 1
     }
