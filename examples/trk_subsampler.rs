@@ -59,17 +59,16 @@ fn main() {
         }
     } else if let Ok(nb) = args.get_str("--number").parse::<usize>() {
         let size = reader.header.nb_streamlines;
-        let mut number = nb;
+        let number = size.min(nb);
 
-        if number > size {
+        if nb > size {
             println!(
                 "The number {} exceed the total number of streamlines: {}. \
                  Saving {} streamlines.",
-                number, size, size);
-            number = size;
+                nb, size, size);
         } else if number == 0 {
-            panic!("Saving 0 streamline is not usefull. \
-                    Please change the number of steamlines you want.");
+            panic!("You requested a subsampling of 0 streamline. \
+                    Please ask for any non-zero positive number.");
         }
 
         let mut sampled_indices = rand::seq::sample_indices(&mut rng, size, number);
@@ -77,7 +76,7 @@ fn main() {
 
         let mut reader_iter = reader.into_iter();
         let mut last = 0;
-        for idx in sampled_indices.into_iter() {
+        for idx in sampled_indices {
             let streamline = reader_iter.nth(idx - last).unwrap();
             writer.write(&streamline);
             last = idx + 1;
