@@ -76,9 +76,8 @@ fn main() {
         sampled_indices.sort();
 
         let mut reader_iter = reader.into_iter();
-        let mut indices_iter = sampled_indices.into_iter();
-        let mut last: usize = 0;
-        for idx in indices_iter {
+        let mut last = 0;
+        for idx in sampled_indices.into_iter() {
             let streamline = reader_iter.nth(idx - last).unwrap();
             writer.write(&streamline);
             last = idx + 1;
