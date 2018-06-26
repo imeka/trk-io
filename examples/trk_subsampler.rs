@@ -9,6 +9,8 @@ use std::str;
 use docopt::Docopt;
 use rand::Rng;
 use rand::SeedableRng;
+use rand::FromEntropy;
+use rand::rngs::SmallRng;
 
 use trk_io::{Reader, Writer};
 
@@ -43,8 +45,8 @@ fn main() {
         args.get_str("<output>"), Some(reader.header.clone())).unwrap();
 
     let mut rng = match args.get_str("--seed").parse::<u8>() {
-        Ok(seed) => rand::XorShiftRng::from_seed([seed; 16]),
-        _        => rand::weak_rng()
+        Ok(seed) => SmallRng::from_seed([seed; 16]),
+        _        => SmallRng::from_entropy()
     };
 
     if let Ok(percent) = args.get_str("--percent").parse::<f32>() {
@@ -57,12 +59,20 @@ fn main() {
         }
     } else if let Ok(nb) = args.get_str("--number").parse::<usize>() {
         let size = reader.header.nb_streamlines;
+        let mut number = nb;
 
-        if nb > size {
-            panic!("The number exceed the total number of streamlines.")
+        if number > size {
+            println!(
+                "The number {} exceed the total number of streamlines: {}. \
+                 Saving {} streamlines.",
+                number, size, size);
+            number = size;
+        } else if number == 0 {
+            panic!("Saving 0 streamline is not usefull. \
+                    Please change the number of steamlines you want.");
         }
 
-        let mut sampled_indices = rand::seq::sample_indices(&mut rng, size, nb);
+        let mut sampled_indices = rand::seq::sample_indices(&mut rng, size, number);
         sampled_indices.sort();
 
         let mut reader_iter = reader.into_iter();
@@ -74,6 +84,6 @@ fn main() {
             last = idx + 1;
         }
     } else {
-        panic!("--percent or --number can't be parsed to a number");
+        panic!("--percent or --number can't be parsed to a positive number");
     }
 }
