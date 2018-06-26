@@ -22,8 +22,8 @@ Usage:
 
 Options:
   -p --percent=<p>  Keep only p% of streamlines. Based on rand.
-  -n --number=<n>   Keep exactly n streamlines. Deterministic.
-  -s --seed=<s>     Make randomness deterministic [default: 42].
+  -n --number=<n>   Keep exactly n streamlines. Based on rand.
+  -s --seed=<s>     Make randomness deterministic.
   -h --help         Show this screen.
   -v --version      Show version.
 ";
@@ -42,9 +42,13 @@ fn main() {
     let mut writer = Writer::new(
         args.get_str("<output>"), Some(reader.header.clone())).unwrap();
 
+    let mut rng = match args.get_str("--seed").parse::<u8>() {
+        Ok(seed) => rand::XorShiftRng::from_seed([seed; 16]),
+        _        => rand::weak_rng()
+    };
+
     if let Ok(percent) = args.get_str("--percent").parse::<f32>() {
         let percent = percent / 100.0;
-        let mut rng = rand::weak_rng();
 
         for streamline in reader.into_iter() {
             if rng.gen::<f32>() < percent {
@@ -52,28 +56,22 @@ fn main() {
             }
         }
     } else if let Ok(nb) = args.get_str("--number").parse::<usize>() {
-        if let Ok(seed) = args.get_str("--seed").parse::<u8>() {
-            let size = reader.header.nb_streamlines;
-            let mut rng = rand::XorShiftRng::from_seed([seed; 16]);
+        let size = reader.header.nb_streamlines;
 
-            let mut sampled_indices = rand::seq::sample_indices(&mut rng, size, nb);
-            sampled_indices.sort();
+        if nb > size {
+            panic!("The number exceed the total number of streamlines.")
+        }
 
-            let mut iter_indices = sampled_indices.into_iter();
-            let mut index = iter_indices.next();
+        let mut sampled_indices = rand::seq::sample_indices(&mut rng, size, nb);
+        sampled_indices.sort();
 
-            for (idx, streamline) in reader.into_iter().enumerate() {
-                if let Some(index_to_save) = index {
-                    if idx == index_to_save {
-                        writer.write(&streamline);
-                        index = iter_indices.next();
-                    }
-                } else {
-                    break;
-                }
-            }
-        } else {
-            panic!("--number need a seed to be deterministic.");
+        let mut reader_iter = reader.into_iter();
+        let mut indices_iter = sampled_indices.into_iter();
+        let mut last: usize = 0;
+        for idx in indices_iter {
+            let streamline = reader_iter.nth(idx - last).unwrap();
+            writer.write(&streamline);
+            last = idx + 1;
         }
     } else {
         panic!("--percent or --number can't be parsed to a number");
