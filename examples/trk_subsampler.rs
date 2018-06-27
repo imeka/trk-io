@@ -30,6 +30,23 @@ Options:
   -v --version      Show version.
 ";
 
+fn sampling_write(writer: &mut Writer, reader: Reader, number: usize, rng: &mut SmallRng) {
+    let mut sampled_indices = rand::seq::sample_indices(
+        rng,
+        reader.header.nb_streamlines,
+        number);
+
+    sampled_indices.sort();
+
+    let mut reader_iter = reader.into_iter();
+    let mut last = 0;
+    for idx in sampled_indices {
+        let streamline = reader_iter.nth(idx - last).unwrap();
+        writer.write(&streamline);
+        last = idx + 1;
+    }
+}
+
 fn main() {
     let version = String::from(env!("CARGO_PKG_VERSION"));
     let args = Docopt::new(USAGE)
@@ -61,27 +78,23 @@ fn main() {
         let size = reader.header.nb_streamlines;
         let number = size.min(nb);
 
-        if nb > size {
-            println!(
-                "The number {} exceed the total number of streamlines: {}. \
-                 Saving {} streamlines.",
-                nb, size, size);
-        } else if number == 0 {
+        if number == 0 {
             panic!("You requested a subsampling of 0 streamline. \
                     Please ask for any non-zero positive number.");
         }
+        if number >= size {
+            println!(
+                "You requested a subsampling of {} streamlines, \
+                 which is more than the total number of streamlines. \
+                 The input file will simply be copied to the output file.", nb);
 
-        let mut sampled_indices = rand::seq::sample_indices(&mut rng, size, number);
-        sampled_indices.sort();
-
-        let mut reader_iter = reader.into_iter();
-        let mut last = 0;
-        for idx in sampled_indices {
-            let streamline = reader_iter.nth(idx - last).unwrap();
-            writer.write(&streamline);
-            last = idx + 1;
+            reader.into_iter().for_each(|streamline| writer.write(&streamline));
+        } else {
+            sampling_write(&mut writer, reader, number, &mut rng);
         }
+
     } else {
         panic!("--percent or --number can't be parsed to a positive number");
     }
 }
+
