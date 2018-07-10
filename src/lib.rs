@@ -24,3 +24,6 @@ pub type Affine = Matrix3<f32>;
 pub type Affine4 = Matrix4<f32>;
 pub type Translation = Vector3<f32>;
 pub type Streamlines = ArraySequence<Point>;
+
+pub type Scalars = ArraySequence<f32>;
+pub type Properties = Vec<f32>;

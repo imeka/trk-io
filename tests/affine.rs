@@ -79,8 +79,8 @@ mod nifti_tests {
                                                0.0, 0.0, 1.0));
         assert_eq!(header.translation, Translation::new(91.0, -127.0, -73.0));
         assert_eq!(header.nb_streamlines, 0);
-        assert_eq!(header.scalars.len(), 0);
-        assert_eq!(header.properties.len(), 0);
+        assert_eq!(header.scalars_name.len(), 0);
+        assert_eq!(header.properties_name.len(), 0);
     }
 
     #[test]
