@@ -4,7 +4,8 @@ use std::path::Path;
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 
-use {Affine, ArraySequence, Header, Point, Points, Properties, Scalars, Streamlines, Translation};
+use tractogram::{Point, Points, Properties, Scalars, Streamlines, Tractogram, TractogramItem};
+use {Affine, ArraySequence, Header, Translation};
 use cheader::{Endianness};
 
 pub struct Reader {
@@ -34,14 +35,14 @@ impl Reader {
         })
     }
 
-    pub fn read_all(&mut self) -> (Streamlines, Vec<Scalars>, Vec<Properties>) {
+    pub fn read_all(&mut self) -> Tractogram {
         match self.endianness {
             Endianness::Little => self.read_all_::<LittleEndian>(),
             Endianness::Big => self.read_all_::<BigEndian>()
         }
     }
 
-    fn read_all_<E: ByteOrder>(&mut self) -> (Streamlines, Vec<Scalars>, Vec<Properties>) {
+    fn read_all_<E: ByteOrder>(&mut self) -> Tractogram {
         let mut lengths = Vec::new();
         let mut v = Vec::with_capacity(300);
         let (mut scalars, mut properties) = self.get_sp();
@@ -51,7 +52,7 @@ impl Reader {
                 &mut v, &mut scalars, &mut properties, nb_points as usize);
         }
         self.float_buffer = vec![];
-        (Streamlines::new(lengths, v), scalars, properties)
+        Tractogram::new(Streamlines::new(lengths, v), scalars, properties)
     }
 
     fn read_streamline<E: ByteOrder>(
@@ -94,22 +95,26 @@ impl Reader {
 }
 
 impl Iterator for Reader {
-    type Item = Points;
+    type Item = TractogramItem;
 
-    fn next(&mut self) -> Option<Points> {
+    fn next(&mut self) -> Option<TractogramItem> {
         if let Ok(nb_points) = match self.endianness {
             Endianness::Little => self.reader.read_i32::<LittleEndian>(),
             Endianness::Big => self.reader.read_i32::<BigEndian>()
         } {
-            let mut points = Vec::with_capacity(nb_points as usize);
+            let mut streamline = Vec::with_capacity(nb_points as usize);
             let (mut scalars, mut properties) = self.get_sp();
             match self.endianness {
                 Endianness::Little => self.read_streamline::<LittleEndian>(
-                    &mut points, &mut scalars, &mut properties, nb_points as usize),
+                    &mut streamline, &mut scalars, &mut properties, nb_points as usize),
                 Endianness::Big => self.read_streamline::<BigEndian>(
-                    &mut points, &mut scalars, &mut properties, nb_points as usize)
+                    &mut streamline, &mut scalars, &mut properties, nb_points as usize)
             };
-            Some(points)
+            Some(TractogramItem::new(
+                streamline,
+                scalars.into_iter().map(|arr| arr.data).collect(),
+                properties.into_iter().map(|v| *v.first().unwrap()).collect()
+            ))
         } else {
             None
         }

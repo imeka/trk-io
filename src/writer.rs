@@ -4,7 +4,8 @@ use std::path::Path;
 
 use byteorder::{LittleEndian, WriteBytesExt};
 
-use {Affine, Affine4, CHeader, Header, Point, Properties, Scalars, Streamlines, Translation};
+use tractogram::{Point, Tractogram, TractogramItem};
+use {Affine, Affine4, CHeader, Header, Translation};
 use affine::get_affine_and_translation;
 
 pub struct Writer {
@@ -44,27 +45,40 @@ impl Writer {
         self.translation = translation;
     }
 
-    pub fn write_all(
-        &mut self,
-        streamlines: &Streamlines,
-        scalars: Vec<Scalars>,
-        properties: Vec<Properties>
-    ) {
+    pub fn write_all(&mut self, tractogram: Tractogram) {
+        // TODO Don't use destructuring, use the tractogram iteration
+        let Tractogram { streamlines, scalars, properties } = tractogram;
+
         // Transform scalars and properties into vector of iterators, so we always know the exact
-        // positiona where we were.
+        // positions where we were.
         let mut scalars = scalars.into_iter().map(|v| v.data.into_iter()).collect::<Vec<_>>();
         let mut properties = properties.into_iter().map(|v| v.into_iter()).collect::<Vec<_>>();
 
-        for streamline in streamlines {
-            self.write_(streamline, &mut scalars, &mut properties);
+        for streamline in streamlines.into_iter() {
+            self.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
+            for p in streamline {
+                self.write_point_and_scalars(*p, &mut scalars);
+            }
+            for property in properties.iter_mut() {
+                let property = property.next().expect("Missing some properties");
+                self.writer.write_f32::<LittleEndian>(property).unwrap();
+            }
+            self.real_n_count += 1;
         }
     }
 
-    pub fn write(&mut self, streamline: &[Point]) {
-        self.writer.write_i32::<LittleEndian>(
-            streamline.len() as i32).unwrap();
+    pub fn write(&mut self, item: TractogramItem) {
+        let TractogramItem { streamline, scalars, properties } = item;
+
+        // Transform scalars into a vector of iterators, so we always know where we were
+        let mut scalars = scalars.into_iter().map(|v| v.into_iter()).collect::<Vec<_>>();
+
+        self.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
         for p in streamline {
-            self.write_point(*p);
+            self.write_point_and_scalars(p, &mut scalars);
+        }
+        for property in properties {
+            self.writer.write_f32::<LittleEndian>(property).unwrap();
         }
         self.real_n_count += 1;
     }
@@ -74,37 +88,25 @@ impl Writer {
     {
         self.writer.write_i32::<LittleEndian>(len as i32).unwrap();
         for p in streamline {
-            self.write_point(p);
+            self.write_point_and_scalars(p, &mut vec![]);
         }
         self.real_n_count += 1;
     }
 
-    fn write_(
+    fn write_point_and_scalars(
         &mut self,
-        streamline: &[Point],
-        scalars: &mut Vec<::std::vec::IntoIter<f32>>,
-        properties: &mut Vec<::std::vec::IntoIter<f32>>
+        p: Point,
+        scalars: &mut Vec<::std::vec::IntoIter<f32>>
     ) {
-        self.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
-        for p in streamline {
-            self.write_point(*p);
-            for scalar in scalars.iter_mut() {
-                let scalar = scalar.next().expect("Missing some scalars");
-                self.writer.write_f32::<LittleEndian>(scalar).unwrap();
-            }
-        }
-        for property in properties.iter_mut() {
-            let property = property.next().expect("Missing some properties");
-            self.writer.write_f32::<LittleEndian>(property).unwrap();
-        }
-        self.real_n_count += 1;
-    }
-
-    fn write_point(&mut self, p: Point) {
         let p = self.affine * p + self.translation;
         self.writer.write_f32::<LittleEndian>(p.x).unwrap();
         self.writer.write_f32::<LittleEndian>(p.y).unwrap();
         self.writer.write_f32::<LittleEndian>(p.z).unwrap();
+
+        for scalar in scalars.iter_mut() {
+            let scalar = scalar.next().expect("Missing some scalars");
+            self.writer.write_f32::<LittleEndian>(scalar).unwrap();
+        }
     }
 }
 

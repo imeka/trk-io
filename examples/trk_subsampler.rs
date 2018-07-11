@@ -32,17 +32,14 @@ Options:
 
 fn sampling_write(writer: &mut Writer, reader: Reader, number: usize, rng: &mut SmallRng) {
     let mut sampled_indices = rand::seq::sample_indices(
-        rng,
-        reader.header.nb_streamlines,
-        number);
+        rng, reader.header.nb_streamlines, number);
 
     sampled_indices.sort();
 
     let mut reader_iter = reader.into_iter();
     let mut last = 0;
     for idx in sampled_indices {
-        let streamline = reader_iter.nth(idx - last).unwrap();
-        writer.write(&streamline);
+        writer.write(reader_iter.nth(idx - last).unwrap());
         last = idx + 1;
     }
 }
@@ -71,7 +68,7 @@ fn main() {
 
         for streamline in reader.into_iter() {
             if rng.gen::<f32>() < percent {
-                writer.write(&streamline);
+                writer.write(streamline);
             }
         }
     } else if let Ok(nb) = args.get_str("--number").parse::<usize>() {
@@ -88,7 +85,7 @@ fn main() {
                  which is more than the total number of streamlines. \
                  The input file will simply be copied to the output file.", nb);
 
-            reader.into_iter().for_each(|streamline| writer.write(&streamline));
+            reader.into_iter().for_each(|streamline| writer.write(streamline));
         } else {
             sampling_write(&mut writer, reader, number, &mut rng);
         }

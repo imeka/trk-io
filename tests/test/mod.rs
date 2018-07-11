@@ -3,15 +3,7 @@
 #![allow(unused)]
 
 use tempdir::TempDir;
-use trk_io::{Header, Properties, Reader, Scalars, Streamlines};
-
-#[derive(PartialEq)]
-pub struct Tract {
-    pub header: Header,
-    pub streamlines: Streamlines,
-    pub scalars: Vec<Scalars>,
-    pub properties: Vec<Properties>
-}
+use trk_io::{Header, Properties, Reader, Scalars, Streamlines, Tractogram};
 
 pub fn get_random_trk_path() -> String {
     let dir = TempDir::new("trk-io").unwrap();
@@ -19,8 +11,7 @@ pub fn get_random_trk_path() -> String {
     path.to_str().unwrap().to_string()
 }
 
-pub fn load_trk(path: &str) -> Tract {
+pub fn load_trk(path: &str) -> (Header, Tractogram) {
     let mut reader = Reader::new(path).unwrap();
-    let (streamlines, scalars, properties) = reader.read_all();
-    Tract { header: reader.header.clone(), streamlines, scalars, properties }
+    (reader.header.clone(), reader.read_all())
 }
