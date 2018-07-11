@@ -29,7 +29,7 @@ mod nifti_tests {
 
         // Loading them back without the right transformation is not supposed to give back the same
         // points. Results are exactly the same as with DiPy.
-        let (_, streamlines) = load_trk(&write_to);
+        let streamlines = load_trk(&write_to).streamlines;
         let streamline = &streamlines[0];
         assert_eq!(streamline[0], Point::new(-82.54104, -25.178139, 37.788338));
         assert_eq!(streamline[1], Point::new(-81.933876, -25.032265, 38.850258));
