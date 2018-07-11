@@ -5,7 +5,7 @@ use std::path::Path;
 use byteorder::{LittleEndian, WriteBytesExt};
 
 use tractogram::{Point, Tractogram, TractogramItem};
-use {Affine, Affine4, CHeader, Header, Translation};
+use {Affine, Affine4, CHeader, Header, Points, Translation};
 use affine::get_affine_and_translation;
 
 pub struct Writer {
@@ -79,6 +79,14 @@ impl Writer {
         }
         for property in properties {
             self.writer.write_f32::<LittleEndian>(property).unwrap();
+        }
+        self.real_n_count += 1;
+    }
+
+    pub fn write_points(&mut self, streamline: Points) {
+        self.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
+        for p in streamline {
+            self.write_point_and_scalars(p, &mut vec![]);
         }
         self.real_n_count += 1;
     }

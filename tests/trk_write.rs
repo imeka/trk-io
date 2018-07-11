@@ -13,6 +13,7 @@ fn test_write_dynamic() {
     let write_to = get_random_trk_path();
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
+    // This seemingly useless { scope } is *required* because Writer::drop must be called
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
         writer.write_from_iter(
@@ -52,6 +53,21 @@ fn test_write_simple() {
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
         writer.write_all(original_tractogram.clone());
+    }
+
+    assert!((original_header, original_tractogram) == load_trk(&write_to));
+}
+
+#[test]
+fn test_write_points_simple() {
+    let write_to = get_random_trk_path();
+    let (original_header, original_tractogram) = load_trk("data/simple.trk");
+
+    {
+        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
+        for streamline in original_tractogram.streamlines.into_iter() {
+            writer.write_points(streamline.to_vec());
+        }
     }
 
     assert!((original_header, original_tractogram) == load_trk(&write_to));
