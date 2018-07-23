@@ -110,7 +110,7 @@ impl Iterator for Reader {
                 Endianness::Big => self.read_streamline::<BigEndian>(
                     &mut streamline, &mut scalars, &mut properties, nb_points as usize)
             };
-            Some(TractogramItem::new(
+            Some((
                 streamline,
                 scalars.into_iter().map(|arr| arr.data).collect(),
                 properties.into_iter().map(|v| *v.first().unwrap()).collect()

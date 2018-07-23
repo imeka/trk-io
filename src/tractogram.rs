@@ -11,6 +11,13 @@ pub type Streamlines = ArraySequence<Point>;
 pub type Properties = Vec<f32>;
 pub type Scalars = ArraySequence<f32>;
 
+pub type TractogramItem = (Points, Vec<Vec<f32>>, Vec<f32>);
+pub type RefTractogramItem<'data> = (
+    &'data[Point],
+    Vec<&'data[f32]>,
+    Vec<f32>
+);
+
 #[derive(Clone, PartialEq)]
 pub struct Tractogram {
     pub streamlines: Streamlines,
@@ -27,38 +34,15 @@ impl Tractogram {
         Tractogram { streamlines, scalars, properties }
     }
 
-    pub fn item(&self, idx: usize) -> TractogramItem {
-        let scalars = self.scalars.iter().map(|arr| arr[idx].to_vec()).collect();
+    pub fn item(&self, idx: usize) -> RefTractogramItem {
+        let scalars = self.scalars.iter().map(|arr| &arr[idx]).collect();
         let properties = self.properties.iter().map(|v| v[idx]).collect();
-        TractogramItem::new(
-            self.streamlines[idx].to_vec(), scalars, properties
-        )
-    }
-}
-
-pub struct TractogramItem {
-    pub streamline: Points,
-    pub scalars: Vec<Vec<f32>>,
-    pub properties: Vec<f32>
-}
-
-impl TractogramItem {
-    pub fn new(
-        streamline: Points,
-        scalars: Vec<Vec<f32>>,
-        properties: Vec<f32>
-    ) -> TractogramItem {
-        TractogramItem { streamline, scalars, properties }
-    }
-
-    pub fn from_slice(streamline: &[Point]) -> TractogramItem {
-        let streamline = streamline.to_vec();
-        TractogramItem { streamline, scalars: vec![], properties: vec![] }
+        (&self.streamlines[idx], scalars, properties)
     }
 }
 
 impl<'data> IntoIterator for &'data Tractogram {
-    type Item = TractogramItem;
+    type Item = RefTractogramItem<'data>;
     type IntoIter = TractogramIterator<'data>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -75,7 +59,7 @@ pub struct TractogramIterator<'data> {
 }
 
 impl<'data> Iterator for TractogramIterator<'data> {
-    type Item = TractogramItem;
+    type Item = RefTractogramItem<'data>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let idx = self.index.next()?;
