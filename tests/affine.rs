@@ -8,7 +8,7 @@ mod test;
 #[cfg(feature = "use_nifti")]
 mod nifti_tests {
     use nifti::{InMemNiftiObject, NiftiObject};
-    use trk_io::{Affine, Affine4, CHeader, Header, Point, TractogramItem, Translation, Writer};
+    use trk_io::{Affine, Affine4, CHeader, Header, Point, Translation, Writer};
     use trk_io::affine::{rasmm_to_trackvis, raw_affine_from_nifti, trackvis_to_rasmm};
     use test::{get_random_trk_path, load_trk};
 
@@ -22,10 +22,10 @@ mod nifti_tests {
             let mut writer = Writer::new(
                 &write_to, Some(Header::from_nifti(&header))).unwrap();
             writer.apply_affine(&raw_affine_from_nifti(&header));
-            writer.write(TractogramItem::from_slice(&[
+            writer.write(&[
                 Point::new(13.75, 27.90, 51.55),
                 Point::new(14.00, 27.95, 51.98),
-                Point::new(14.35, 28.05, 52.33)]));
+                Point::new(14.35, 28.05, 52.33)][..]);
         }
 
         // Loading them back without the right transformation is not supposed to give back the same

@@ -1,8 +1,7 @@
 extern crate trk_io;
 
 use trk_io::{
-    Affine, ArraySequence, Header, Point, Properties, Reader, Scalars,
-    Tractogram, TractogramItem, Translation};
+    Affine, ArraySequence, Header, Point, Properties, Reader, Scalars, Tractogram, Translation};
 
 #[test]
 fn test_load_empty() {
@@ -45,7 +44,7 @@ fn test_load_simple() {
 
     // Test generator
     let reader = Reader::new("data/empty.trk").unwrap();
-    for (i, TractogramItem { streamline, .. }) in reader.into_iter().enumerate() {
+    for (i, (streamline, _, _ )) in reader.into_iter().enumerate() {
         if i == 0 {
             assert_eq!(streamline, first);
         } else if i == 1 {
@@ -80,7 +79,7 @@ fn test_load_standard() {
 
     // Test generator
     let reader = Reader::new("data/empty.trk").unwrap();
-    for TractogramItem { streamline, .. } in reader.into_iter() {
+    for (streamline, _, _ ) in reader.into_iter() {
         assert_eq!(streamline.len(), 3);
     }
 }
@@ -147,7 +146,7 @@ fn test_load_complex_big_endian() {
 
     // Test generator
     let reader = Reader::new("data/complex_big_endian.trk").unwrap();
-    for (i, TractogramItem { streamline, .. }) in reader.into_iter().enumerate() {
+    for (i, (streamline, _, _ )) in reader.into_iter().enumerate() {
         if i == 0 {
             assert_eq!(streamline, first);
         } else if i == 1 {

@@ -5,7 +5,7 @@ mod test;
 
 use std::iter::FromIterator;
 
-use trk_io::{Affine4, Point, TractogramItem, Writer};
+use trk_io::{Affine4, Point, Writer};
 use test::{get_random_trk_path, load_trk};
 
 #[test]
@@ -39,7 +39,7 @@ fn test_write_empty() {
 
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
-        writer.write_all(original_tractogram.clone());
+        writer.write(original_tractogram.clone());
     }
 
     assert!((original_header, original_tractogram) == load_trk(&write_to));
@@ -52,7 +52,7 @@ fn test_write_simple() {
 
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
-        writer.write_all(original_tractogram.clone());
+        writer.write(original_tractogram.clone());
     }
 
     assert!((original_header, original_tractogram) == load_trk(&write_to));
@@ -66,7 +66,7 @@ fn test_write_points_simple() {
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
         for streamline in original_tractogram.streamlines.into_iter() {
-            writer.write_points(streamline.to_vec());
+            writer.write(streamline);
         }
     }
 
@@ -80,9 +80,9 @@ fn test_write_standard() {
 
     {
         let mut writer = Writer::new(&write_to, Some(original_header)).unwrap();
-        writer.write(TractogramItem::from_slice(&original_tractogram.streamlines[0]));
-        writer.write(TractogramItem::from_slice(&original_tractogram.streamlines[1]));
-        writer.write(TractogramItem::from_slice(&original_tractogram.streamlines[2]));
+        writer.write(&original_tractogram.streamlines[0]);
+        writer.write(&original_tractogram.streamlines[1]);
+        writer.write(&original_tractogram.streamlines[2]);
     }
 
     let (header, tractogram) = load_trk(&write_to);
@@ -104,7 +104,7 @@ fn test_write_standard_lps() {
                                                 0.0, 0.0, 1.0, 1.0,
                                                 0.0, 0.0, 0.0, 1.0));
         for i in 0..10 {
-            writer.write(TractogramItem::from_slice(&original_tractogram.streamlines[i]));
+            writer.write(&original_tractogram.streamlines[i]);
         }
     }
 
@@ -126,7 +126,7 @@ fn test_write_complex() {
 
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
-        writer.write_all(original_tractogram.clone());
+        writer.write(original_tractogram.clone());
     }
 
     assert!((original_header, original_tractogram) == load_trk(&write_to));
