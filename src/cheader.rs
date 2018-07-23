@@ -1,7 +1,7 @@
 
 use std::fmt;
 use std::fs::{File};
-use std::io::{BufReader, BufWriter, Read, Result, Seek, SeekFrom};
+use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Result, Seek, SeekFrom};
 use std::str::from_utf8;
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian,
@@ -86,6 +86,21 @@ impl CHeader {
         let n_count_offset = (HEADER_SIZE - 12) as u64;
         f.seek(SeekFrom::Start(n_count_offset))?;
         Ok(())
+    }
+
+    pub fn add_scalar(&mut self, name: &str) -> Result<()> {
+        if self.n_scalars > 10 {
+            Err(Error::new(ErrorKind::InvalidInput, "Trk header is already full of scalars (10)"))
+        } else if name.len() > 20 {
+            Err(Error::new(ErrorKind::InvalidInput, "New scalar must be <= 20 characters."))
+        } else if !name.is_ascii() {
+            Err(Error::new(ErrorKind::InvalidInput, "New scalar must be pure ascii."))
+        } else {
+            let pos = 20 * self.n_scalars as usize;
+            self.scalar_name[pos..pos + name.len()].clone_from_slice(name.as_bytes());
+            self.n_scalars += 1;
+            return Ok(())
+        }
     }
 
     pub fn get_scalars_name(&self) -> Vec<String> {
@@ -295,4 +310,21 @@ fn read_names(names_bytes: &[u8], nb: usize) -> Vec<String> {
     }
 
     names
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_scalars() {
+        let mut header = CHeader::default();
+        header.add_scalar("color_x").unwrap();
+        header.add_scalar("color_y").unwrap();
+
+        let mut gt = [0u8; 200];
+        gt[..7].clone_from_slice(b"color_x");
+        gt[20..27].clone_from_slice(b"color_y");
+        assert_eq!(&header.scalar_name[..], &gt[..]);
+    }
 }
