@@ -5,8 +5,14 @@ mod test;
 
 use std::iter::FromIterator;
 
-use trk_io::{Affine4, Point, Writer};
+use trk_io::{Affine4, Point, Reader, Writer};
 use test::{get_random_trk_path, load_trk};
+
+// write(Tractogram) is tested in write_empty and write_simple.
+// write(TractogramItem) is tested in write_complex.
+// write(RefTractogramItem)is tested in write_ref_tractogram_item.
+// write(&[Point]) is tested in write_standard and write_standard_lps.
+// write_from_iter is tested in write_dynamic.
 
 #[test]
 fn test_write_dynamic() {
@@ -74,6 +80,21 @@ fn test_write_points_simple() {
 }
 
 #[test]
+fn test_write_ref_tractogram_item() {
+    let write_to = get_random_trk_path();
+    let (original_header, original_tractogram) = load_trk("data/simple.trk");
+
+    {
+        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
+        for ref_item in original_tractogram.into_iter() {
+            writer.write(ref_item);
+        }
+    }
+
+    assert!((original_header, original_tractogram) == load_trk(&write_to));
+}
+
+#[test]
 fn test_write_standard() {
     let write_to = get_random_trk_path();
     let (original_header, original_tractogram) = load_trk("data/standard.trk");
@@ -122,12 +143,15 @@ fn test_write_standard_lps() {
 #[test]
 fn test_write_complex() {
     let write_to = get_random_trk_path();
-    let (original_header, original_tractogram) = load_trk("data/complex.trk");
+    let reader = Reader::new("data/complex.trk").unwrap();
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
-        writer.write(original_tractogram.clone());
+        let mut writer = Writer::new(&write_to, Some(reader.header.clone())).unwrap();
+        for item in reader.into_iter() {
+            writer.write(item);
+        }
     }
 
+    let (original_header, original_tractogram) = load_trk("data/complex.trk");
     assert!((original_header, original_tractogram) == load_trk(&write_to));
 }
