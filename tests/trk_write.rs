@@ -10,7 +10,7 @@ use test::{get_random_trk_path, load_trk};
 
 // write(Tractogram) is tested in write_empty and write_simple.
 // write(TractogramItem) is tested in write_complex.
-// write(RefTractogramItem)is tested in write_ref_tractogram_item.
+// write(RefTractogramItem) is tested in write_ref_tractogram_item.
 // write(&[Point]) is tested in write_standard and write_standard_lps.
 // write_from_iter is tested in write_dynamic.
 

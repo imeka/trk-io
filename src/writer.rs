@@ -22,24 +22,8 @@ pub trait Writable {
 
 impl Writable for Tractogram {
     fn write(self, w: &mut Writer) {
-        // TODO Don't use destructuring, use the tractogram iteration
-        let Tractogram { streamlines, scalars, properties } = self;
-
-        // Transform scalars and properties into vector of iterators, so we always know the exact
-        // positions where we were.
-        let mut scalars = scalars.into_iter().map(|v| v.data.into_iter()).collect::<Vec<_>>();
-        let mut properties = properties.into_iter().map(|v| v.into_iter()).collect::<Vec<_>>();
-
-        for streamline in streamlines.into_iter() {
-            w.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
-            for p in streamline {
-                w.write_point_and_scalars(p, &mut scalars);
-            }
-            for property in properties.iter_mut() {
-                let property = property.next().expect("Missing some properties");
-                w.writer.write_f32::<LittleEndian>(property).unwrap();
-            }
-            w.real_n_count += 1;
+        for item in &self {
+            item.write(w);
         }
     }
 }
