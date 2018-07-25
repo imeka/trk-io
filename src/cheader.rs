@@ -92,9 +92,9 @@ impl CHeader {
         if self.n_scalars > 10 {
             Err(Error::new(ErrorKind::InvalidInput, "Trk header is already full of scalars (10)"))
         } else if name.len() > 20 {
-            Err(Error::new(ErrorKind::InvalidInput, "New scalar must be <= 20 characters."))
+            Err(Error::new(ErrorKind::InvalidInput, "New scalar name must be <= 20 characters."))
         } else if !name.is_ascii() {
-            Err(Error::new(ErrorKind::InvalidInput, "New scalar must be pure ascii."))
+            Err(Error::new(ErrorKind::InvalidInput, "New scalar name must be pure ascii."))
         } else {
             let pos = 20 * self.n_scalars as usize;
             self.scalar_name[pos..pos + name.len()].clone_from_slice(name.as_bytes());

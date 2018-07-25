@@ -8,11 +8,15 @@ use docopt::Docopt;
 use trk_io::{Header, Point, Reader, Writer};
 
 static USAGE: &'static str = "
-Color a TrackVis (.trk) file
+Color a TrackVis (.trk) file.
+
+This will add 3 scalars (color_x, color_y, color_z) per point, so the output file will weight
+around the double as the input file. Please note that coloring by 'local' orientation may be
+useless as some programs already use this method by default to color the streamlines.
 
 Usage:
   trk_color uniform <r> <g> <b> <input> <output> [options]
-  trk_color orientation <input> <output> [options]
+  trk_color local <input> <output> [options]
   trk_color (-h | --help)
   trk_color (-v | --version)
 
@@ -43,8 +47,8 @@ fn main() {
         let g = args.get_str("<g>").parse::<f32>().unwrap();
         let b = args.get_str("<b>").parse::<f32>().unwrap();
         uniform(reader, header, args.get_str("<output>"), r, g, b);
-    } else if args.get_bool("orientation") {
-        orientation(reader, header, args.get_str("<output>"));
+    } else if args.get_bool("local") {
+        local(reader, header, args.get_str("<output>"));
     }
 }
 
@@ -59,7 +63,7 @@ fn uniform(reader: Reader, header: Header, write_to: &str, r: f32, g: f32, b: f3
     }
 }
 
-fn orientation(reader: Reader, header: Header, write_to: &str) {
+fn local(reader: Reader, header: Header, write_to: &str) {
     let mut writer = Writer::new(write_to, Some(header)).unwrap();
     for (streamline, mut scalars, properties) in reader.into_iter() {
         let mut r = Vec::with_capacity(streamline.len());
