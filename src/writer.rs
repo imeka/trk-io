@@ -32,16 +32,21 @@ impl Writable for Tractogram {
 impl Writable for TractogramItem {
     fn write(self, w: &mut Writer) {
         let (streamline, scalars, properties) = self;
-        let scalars = scalars.data.as_slice().chunks(w.nb_scalars);
+        if scalars.is_empty() {
+            streamline.write(w);
+        } else {
+            w.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
+            w.real_n_count += 1;
 
-        w.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
-        for (p, scalars) in streamline.into_iter().zip(scalars) {
-            w.write_point_and_scalars(&p, scalars);
+            let scalars = scalars.data.as_slice().chunks(w.nb_scalars);
+            for (p, scalars) in streamline.into_iter().zip(scalars) {
+                w.write_point_and_scalars(&p, scalars);
+            }
         }
+
         for property in properties {
             w.writer.write_f32::<LittleEndian>(property).unwrap();
         }
-        w.real_n_count += 1;
     }
 }
 
@@ -51,12 +56,13 @@ impl<'data> Writable for RefTractogramItem<'data> {
         if scalars.is_empty() {
             streamline.write(w);
         } else {
-            let scalars = scalars.chunks(w.nb_scalars);
             w.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
+            w.real_n_count += 1;
+
+            let scalars = scalars.chunks(w.nb_scalars);
             for (p, scalars) in streamline.into_iter().zip(scalars) {
                 w.write_point_and_scalars(p, scalars);
             }
-            w.real_n_count += 1;
         }
 
         for &property in properties {

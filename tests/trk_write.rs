@@ -9,7 +9,7 @@ use trk_io::{Affine4, Point, Reader, Writer};
 use test::{get_random_trk_path, load_trk};
 
 // write(Tractogram) is tested in write_empty and write_simple.
-// write(TractogramItem) is tested in write_complex.
+// write(TractogramItem) is tested in test_write_tractogram_item_simple and write_complex.
 // write(RefTractogramItem) is tested in write_ref_tractogram_item.
 // write(&[Point]) is tested in write_standard and write_standard_lps.
 // write_from_iter is tested in write_dynamic.
@@ -80,7 +80,23 @@ fn test_write_points_simple() {
 }
 
 #[test]
-fn test_write_ref_tractogram_item() {
+fn test_write_tractogram_item_simple() {
+    let write_to = get_random_trk_path();
+    let reader = Reader::new("data/simple.trk").unwrap();
+
+    {
+        let mut writer = Writer::new(&write_to, Some(reader.header.clone())).unwrap();
+        for item in reader.into_iter() {
+            writer.write(item);
+        }
+    }
+
+    let (original_header, original_tractogram) = load_trk("data/simple.trk");
+    assert!((original_header, original_tractogram) == load_trk(&write_to));
+}
+
+#[test]
+fn test_write_ref_tractogram_item_simple() {
     let write_to = get_random_trk_path();
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
