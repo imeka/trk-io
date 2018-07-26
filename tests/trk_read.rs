@@ -1,7 +1,6 @@
 extern crate trk_io;
 
-use trk_io::{
-    Affine, ArraySequence, Header, Point, Properties, Reader, Scalars, Tractogram, Translation};
+use trk_io::{Affine, ArraySequence, Header, Point, Reader, Tractogram, Translation};
 
 #[test]
 fn test_load_empty() {
@@ -161,8 +160,8 @@ fn test_load_complex_big_endian() {
 
 fn check_complex_scalars_and_properties(
     header: Header,
-    scalars: Vec<Scalars>,
-    properties: Vec<Properties>
+    scalars: ArraySequence<f32>,
+    properties: ArraySequence<f32>
 ) {
     // Scalars
     assert_eq!(header.scalars_name, vec![
@@ -170,16 +169,14 @@ fn check_complex_scalars_and_properties(
         String::from("colors"),
         String::from("colors"),
         String::from("fa")]);
-    assert!(scalars[0] == ArraySequence::new(
-        vec![1, 2, 5], vec![1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]));
-    assert!(scalars[1] == ArraySequence::new(
-        vec![1, 2, 5], vec![0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]));
-    assert!(scalars[2] == ArraySequence::new(
-        vec![1, 2, 5], vec![0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0]));
-    assert!(scalars[3] == ArraySequence::new(
-        vec![1, 2, 5],
-        vec![0.200000003, 0.300000012, 0.400000006, 0.500000000,
-             0.600000024, 0.600000024, 0.699999988, 0.800000012]));
+    assert_eq!(&scalars[0], &[1.0, 0.0, 0.0, 0.200000003]);
+    assert_eq!(&scalars[1], &[0.0, 1.0, 0.0, 0.300000012,
+                              0.0, 1.0, 0.0, 0.400000006]);
+    assert_eq!(&scalars[2], &[0.0, 0.0, 1.0, 0.500000000,
+                              0.0, 0.0, 1.0, 0.600000024,
+                              0.0, 0.0, 1.0, 0.600000024,
+                              0.0, 0.0, 1.0, 0.699999988,
+                              0.0, 0.0, 1.0, 0.800000012]);
 
     // Properties
     assert_eq!(header.properties_name, vec![
@@ -188,9 +185,7 @@ fn check_complex_scalars_and_properties(
         String::from("mean_colors"),
         String::from("mean_curvature"),
         String::from("mean_torsion")]);
-    assert_eq!(properties[0], vec![1.0, 0.0, 0.0]);
-    assert_eq!(properties[1], vec![0.0, 1.0, 0.0]);
-    assert_eq!(properties[2], vec![0.0, 0.0, 1.0]);
-    assert_eq!(properties[3], vec![1.11000001, 2.11000001, 3.11000001]);
-    assert_eq!(properties[4], vec![1.22000003, 2.22000003, 3.22000003]);
+    assert_eq!(&properties[0], &[1.0, 0.0, 0.0, 1.11000001, 1.22000003]);
+    assert_eq!(&properties[1], &[0.0, 1.0, 0.0, 2.11000001, 2.22000003]);
+    assert_eq!(&properties[2], &[0.0, 0.0, 1.0, 3.11000001, 3.22000003]);
 }

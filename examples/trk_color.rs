@@ -55,9 +55,11 @@ fn main() {
 fn uniform(reader: Reader, header: Header, write_to: &str, r: f32, g: f32, b: f32) {
     let mut writer = Writer::new(write_to, Some(header)).unwrap();
     for (streamline, mut scalars, properties) in reader.into_iter() {
-        scalars.push(vec![r; streamline.len()]);
-        scalars.push(vec![g; streamline.len()]);
-        scalars.push(vec![b; streamline.len()]);
+        for _ in 0..streamline.len() {
+            scalars.push(r);
+            scalars.push(g);
+            scalars.push(b);
+        }
 
         writer.write((streamline, scalars, properties));
     }
@@ -66,36 +68,29 @@ fn uniform(reader: Reader, header: Header, write_to: &str, r: f32, g: f32, b: f3
 fn local(reader: Reader, header: Header, write_to: &str) {
     let mut writer = Writer::new(write_to, Some(header)).unwrap();
     for (streamline, mut scalars, properties) in reader.into_iter() {
-        let mut r = Vec::with_capacity(streamline.len());
-        let mut g = Vec::with_capacity(streamline.len());
-        let mut b = Vec::with_capacity(streamline.len());
-
-        // Scope to avoid r, g, b mutable sharing
+        // Scope to avoid scalars mutable sharing
         {
             let mut add = |p1: &Point, p2: &Point| {
                 let x = p2.x - p1.x;
                 let y = p2.y - p1.y;
                 let z = p2.z - p1.z;
                 let norm = (x.powi(2) + y.powi(2) + z.powi(2)).sqrt();
-                r.push((x / norm).abs() * 255.0);
-                g.push((y / norm).abs() * 255.0);
-                b.push((z / norm).abs() * 255.0);
+                scalars.push((x / norm).abs() * 255.0);
+                scalars.push((y / norm).abs() * 255.0);
+                scalars.push((z / norm).abs() * 255.0);
             };
 
             // Manage first point
-            add(&streamline[1], &streamline[0]);
+            add(&streamline[0], &streamline[1]);
 
             for p in streamline.windows(3) {
-                add(&p[2], &p[0]);
+                add(&p[0], &p[2]);
             }
 
             // Manage last point
             add(&streamline[streamline.len() - 2], &streamline[streamline.len() - 1]);
         }
 
-        scalars.push(r);
-        scalars.push(g);
-        scalars.push(b);
         writer.write((streamline, scalars, properties));
     }
 }

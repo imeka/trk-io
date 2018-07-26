@@ -8,35 +8,40 @@ pub type Point = Point3<f32>;
 pub type Points = Vec<Point>;
 pub type Streamlines = ArraySequence<Point>;
 
-pub type Properties = Vec<f32>;
-pub type Scalars = ArraySequence<f32>;
-
-pub type TractogramItem = (Points, Vec<Vec<f32>>, Vec<f32>);
+pub type TractogramItem = (Points, ArraySequence<f32>, Vec<f32>);
 pub type RefTractogramItem<'data> = (
     &'data[Point],
-    Vec<&'data[f32]>,
-    Vec<f32>
+    &'data[f32],
+    &'data[f32]
 );
 
 #[derive(Clone, PartialEq)]
 pub struct Tractogram {
     pub streamlines: Streamlines,
-    pub scalars: Vec<Scalars>,
-    pub properties: Vec<Properties>
+    pub scalars: ArraySequence<f32>,
+    pub properties: ArraySequence<f32>
 }
 
 impl Tractogram {
     pub fn new(
         streamlines: Streamlines,
-        scalars: Vec<Scalars>,
-        properties: Vec<Properties>
+        scalars: ArraySequence<f32>,
+        properties: ArraySequence<f32>
     ) -> Tractogram {
         Tractogram { streamlines, scalars, properties }
     }
 
     pub fn item(&self, idx: usize) -> RefTractogramItem {
-        let scalars = self.scalars.iter().map(|arr| &arr[idx]).collect();
-        let properties = self.properties.iter().map(|v| v[idx]).collect();
+        let scalars = if self.scalars.is_empty() {
+            &[]
+        } else {
+            &self.scalars[idx]
+        };
+        let properties = if self.properties.is_empty() {
+            &[]
+        } else {
+            &self.properties[idx]
+        };
         (&self.streamlines[idx], scalars, properties)
     }
 }

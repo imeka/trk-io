@@ -4,7 +4,7 @@ use std::path::Path;
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 
-use tractogram::{Point, Points, Properties, Scalars, Streamlines, Tractogram, TractogramItem};
+use tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem};
 use {Affine, ArraySequence, Header, Translation};
 use cheader::{Endianness};
 
@@ -15,6 +15,8 @@ pub struct Reader {
     pub affine: Affine,
     pub translation: Translation,
 
+    nb_scalars: usize,
+    nb_properties: usize,
     nb_floats_per_point: usize,
     float_buffer: Vec<f32>
 }
@@ -27,11 +29,14 @@ impl Reader {
         let (header, endianness) = Header::read(&mut reader)?;
         let affine = header.affine;
         let translation = header.translation;
-        let nb_floats_per_point = 3 + header.scalars_name.len() as usize;
+        let nb_scalars = header.scalars_name.len();
+        let nb_properties = header.properties_name.len();
+        let nb_floats_per_point = 3 + nb_scalars;
 
         Ok(Reader {
             reader, endianness, header, affine, translation,
-            nb_floats_per_point, float_buffer: Vec::with_capacity(300)
+            nb_scalars, nb_properties, nb_floats_per_point,
+            float_buffer: Vec::with_capacity(300)
         })
     }
 
@@ -43,14 +48,21 @@ impl Reader {
     }
 
     fn read_all_<E: ByteOrder>(&mut self) -> Tractogram {
+        // TODO Anything we can do to reerve?
         let mut lengths = Vec::new();
         let mut v = Vec::with_capacity(300);
-        let (mut scalars, mut properties) = self.get_sp();
+        let mut scalars = ArraySequence::with_capacity(300);
+        let mut properties = ArraySequence::with_capacity(300);
         while let Ok(nb_points) = self.reader.read_i32::<E>() {
             lengths.push(nb_points as usize);
-            self.read_streamline::<E>(
-                &mut v, &mut scalars, &mut properties, nb_points as usize);
+            self.read_streamline::<E>(&mut v, &mut scalars, nb_points as usize);
+
+            for _ in 0..self.nb_properties {
+                properties.push(self.reader.read_f32::<E>().unwrap());
+            }
+            properties.end_push();
         }
+
         self.float_buffer = vec![];
         Tractogram::new(Streamlines::new(lengths, v), scalars, properties)
     }
@@ -58,8 +70,7 @@ impl Reader {
     fn read_streamline<E: ByteOrder>(
         &mut self,
         points: &mut Points,
-        scalars: &mut Vec<Scalars>,
-        properties: &mut Vec<Properties>,
+        scalars: &mut ArraySequence<f32>,
         nb_points: usize)
     {
         // Vec::resize never decreases capacity, it can only increase it
@@ -73,24 +84,11 @@ impl Reader {
             let p = Point::new(floats[0], floats[1], floats[2]);
             points.push((self.affine * p) + self.translation);
 
-            for (scalar, f) in scalars.iter_mut().zip(&floats[3..]) {
-                scalar.push(*f);
+            for f in &floats[3..] {
+                scalars.push(*f);
             }
         }
-
-        for scalar in scalars.iter_mut() {
-            scalar.end_push();
-        }
-
-        for property in properties.iter_mut() {
-            property.push(self.reader.read_f32::<E>().unwrap());
-        }
-    }
-
-    fn get_sp(&mut self) -> (Vec<Scalars>, Vec<Properties>) {
-        let scalars = vec![ArraySequence::empty(); self.header.scalars_name.len()];
-        let properties = vec![vec![]; self.header.properties_name.len()];
-        (scalars, properties)
+        scalars.end_push();
     }
 }
 
@@ -102,19 +100,28 @@ impl Iterator for Reader {
             Endianness::Little => self.reader.read_i32::<LittleEndian>(),
             Endianness::Big => self.reader.read_i32::<BigEndian>()
         } {
-            let mut streamline = Vec::with_capacity(nb_points as usize);
-            let (mut scalars, mut properties) = self.get_sp();
+            let nb_points = nb_points as usize;
+            let mut streamline = Vec::with_capacity(nb_points);
+            let mut scalars = ArraySequence::with_capacity(nb_points * self.nb_scalars);
+            let mut properties = Vec::with_capacity(self.nb_properties);
             match self.endianness {
-                Endianness::Little => self.read_streamline::<LittleEndian>(
-                    &mut streamline, &mut scalars, &mut properties, nb_points as usize),
-                Endianness::Big => self.read_streamline::<BigEndian>(
-                    &mut streamline, &mut scalars, &mut properties, nb_points as usize)
+                Endianness::Little => {
+                    self.read_streamline::<LittleEndian>(
+                        &mut streamline, &mut scalars, nb_points as usize);
+                    for _ in 0..self.nb_properties {
+                        properties.push(self.reader.read_f32::<LittleEndian>().unwrap());
+                    }
+                },
+                Endianness::Big => {
+                    self.read_streamline::<BigEndian>(
+                        &mut streamline, &mut scalars, nb_points as usize);
+                    for _ in 0..self.nb_properties {
+                        properties.push(self.reader.read_f32::<BigEndian>().unwrap());
+                    }
+                }
             };
-            Some((
-                streamline,
-                scalars.into_iter().map(|arr| arr.data).collect(),
-                properties.into_iter().map(|v| *v.first().unwrap()).collect()
-            ))
+
+            Some((streamline, scalars, properties))
         } else {
             None
         }

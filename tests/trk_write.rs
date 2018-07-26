@@ -85,7 +85,8 @@ fn test_write_ref_tractogram_item() {
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
+        let mut writer = Writer::new(
+            &write_to, Some(original_header.clone())).unwrap();
         for ref_item in original_tractogram.into_iter() {
             writer.write(ref_item);
         }

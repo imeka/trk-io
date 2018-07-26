@@ -3,7 +3,7 @@
 #![allow(unused)]
 
 use tempdir::TempDir;
-use trk_io::{Header, Properties, Reader, Scalars, Streamlines, Tractogram};
+use trk_io::{Header, Reader, Streamlines, Tractogram};
 
 pub fn get_random_trk_path() -> String {
     let dir = TempDir::new("trk-io").unwrap();
