@@ -32,16 +32,10 @@ impl Tractogram {
     }
 
     pub fn item(&self, idx: usize) -> RefTractogramItem {
-        let scalars = if self.scalars.is_empty() {
-            &[]
-        } else {
-            &self.scalars[idx]
-        };
-        let properties = if self.properties.is_empty() {
-            &[]
-        } else {
-            &self.properties[idx]
-        };
+        // Do not use .get(idx).unwrap_or(). The empty slice is valid only if the ArraySequence are
+        // empty. It should crash if the index is invalid.
+        let scalars = if self.scalars.is_empty() { &[] } else { &self.scalars[idx] };
+        let properties = if self.properties.is_empty() { &[] } else { &self.properties[idx] };
         (&self.streamlines[idx], scalars, properties)
     }
 }
