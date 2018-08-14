@@ -8,6 +8,27 @@ use tractogram::{Point, RefTractogramItem, Tractogram, TractogramItem};
 use {Affine, Affine4, CHeader, Header, Translation};
 use affine::get_affine_and_translation;
 
+macro_rules! write_tractogram {
+    ($writer:ident, $streamline:expr, $scalars:expr, $properties:expr) => {
+        if $writer.nb_scalars == 0 {
+            $streamline.write($writer);
+        } else {
+            $writer.writer.write_i32::<LittleEndian>($streamline.len() as i32).unwrap();
+            $writer.real_n_count += 1;
+
+            let scalars = $scalars.chunks($writer.nb_scalars);
+            for (p, scalars) in $streamline.into_iter().zip(scalars) {
+                $writer.write_point(&p);
+                $writer.write_scalars(scalars);
+            }
+        }
+
+        for property in $properties {
+            $writer.writer.write_f32::<LittleEndian>(property.clone()).unwrap();
+        }
+    }
+}
+
 macro_rules! write_streamline {
     ($writer:ident, $streamline:expr, $nb_points:expr) => {
         $writer.writer.write_i32::<LittleEndian>($nb_points as i32).unwrap();
@@ -40,46 +61,16 @@ impl Writable for Tractogram {
 }
 
 impl Writable for TractogramItem {
-    fn write(self, w: &mut Writer) {
+    fn write(self, writer: &mut Writer) {
         let (streamline, scalars, properties) = self;
-        if scalars.is_empty() {
-            streamline.write(w);
-        } else {
-            w.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
-            w.real_n_count += 1;
-
-            let scalars = scalars.data.as_slice().chunks(w.nb_scalars);
-            for (p, scalars) in streamline.into_iter().zip(scalars) {
-                w.write_point(&p);
-                w.write_scalars(scalars);
-            }
-        }
-
-        for property in properties {
-            w.writer.write_f32::<LittleEndian>(property).unwrap();
-        }
+        write_tractogram!(writer, streamline, scalars.data.as_slice(), properties);
     }
 }
 
 impl<'data> Writable for RefTractogramItem<'data> {
-    fn write(self, w: &mut Writer) {
+    fn write(self, writer: &mut Writer) {
         let (streamline, scalars, properties) = self;
-        if scalars.is_empty() {
-            streamline.write(w);
-        } else {
-            w.writer.write_i32::<LittleEndian>(streamline.len() as i32).unwrap();
-            w.real_n_count += 1;
-
-            let scalars = scalars.chunks(w.nb_scalars);
-            for (p, scalars) in streamline.into_iter().zip(scalars) {
-                w.write_point(p);
-                w.write_scalars(scalars);
-            }
-        }
-
-        for &property in properties {
-            w.writer.write_f32::<LittleEndian>(property).unwrap();
-        }
+        write_tractogram!(writer, streamline, scalars, properties);
     }
 }
 
