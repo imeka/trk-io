@@ -40,7 +40,8 @@ impl Writable for TractogramItem {
 
             let scalars = scalars.data.as_slice().chunks(w.nb_scalars);
             for (p, scalars) in streamline.into_iter().zip(scalars) {
-                w.write_point_and_scalars(&p, scalars);
+                w.write_point(&p);
+                w.write_scalars(scalars);
             }
         }
 
@@ -61,7 +62,8 @@ impl<'data> Writable for RefTractogramItem<'data> {
 
             let scalars = scalars.chunks(w.nb_scalars);
             for (p, scalars) in streamline.into_iter().zip(scalars) {
-                w.write_point_and_scalars(p, scalars);
+                w.write_point(p);
+                w.write_scalars(scalars);
             }
         }
 
@@ -75,7 +77,7 @@ impl<'data> Writable for &'data [Point] {
     fn write(self, w: &mut Writer) {
         w.writer.write_i32::<LittleEndian>(self.len() as i32).unwrap();
         for p in self {
-            w.write_point_and_scalars(p, &[]);
+            w.write_point(p);
         }
         w.real_n_count += 1;
     }
@@ -120,17 +122,19 @@ impl Writer {
     {
         self.writer.write_i32::<LittleEndian>(len as i32).unwrap();
         for p in streamline {
-            self.write_point_and_scalars(&p, &[]);
+            self.write_point(&p);
         }
         self.real_n_count += 1;
     }
 
-    fn write_point_and_scalars(&mut self, p: &Point, scalars: &[f32]) {
+    fn write_point(&mut self, p: &Point) {
         let p = self.affine * p + self.translation;
         self.writer.write_f32::<LittleEndian>(p.x).unwrap();
         self.writer.write_f32::<LittleEndian>(p.y).unwrap();
         self.writer.write_f32::<LittleEndian>(p.z).unwrap();
+    }
 
+    fn write_scalars(&mut self, scalars: &[f32]) {
         for &scalar in scalars {
             self.writer.write_f32::<LittleEndian>(scalar).unwrap();
         }
