@@ -8,7 +8,7 @@ use tractogram::{Point, RefTractogramItem, Tractogram, TractogramItem};
 use {Affine, Affine4, CHeader, Header, Translation};
 use affine::get_affine_and_translation;
 
-macro_rules! write_tractogram {
+macro_rules! write_streamline {
     ($writer:ident, $streamline:expr, $scalars:expr, $properties:expr) => {
         if $writer.nb_scalars == 0 {
             $streamline.write($writer);
@@ -19,17 +19,13 @@ macro_rules! write_tractogram {
             let scalars = $scalars.chunks($writer.nb_scalars);
             for (p, scalars) in $streamline.into_iter().zip(scalars) {
                 $writer.write_point(&p);
-                $writer.write_scalars(scalars);
+                $writer.write_sp(scalars);
             }
         }
 
-        for property in $properties {
-            $writer.writer.write_f32::<LittleEndian>(property.clone()).unwrap();
-        }
-    }
-}
-
-macro_rules! write_streamline {
+        $writer.write_sp($properties);
+    };
+    // Fast method, without scalars and properties
     ($writer:ident, $streamline:expr, $nb_points:expr) => {
         $writer.writer.write_i32::<LittleEndian>($nb_points as i32).unwrap();
         for p in $streamline {
@@ -63,14 +59,14 @@ impl Writable for Tractogram {
 impl Writable for TractogramItem {
     fn write(self, writer: &mut Writer) {
         let (streamline, scalars, properties) = self;
-        write_tractogram!(writer, streamline, scalars.data.as_slice(), properties);
+        write_streamline!(writer, streamline, scalars.data.as_slice(), &properties);
     }
 }
 
 impl<'data> Writable for RefTractogramItem<'data> {
     fn write(self, writer: &mut Writer) {
         let (streamline, scalars, properties) = self;
-        write_tractogram!(writer, streamline, scalars, properties);
+        write_streamline!(writer, streamline, scalars, properties);
     }
 }
 
@@ -127,7 +123,7 @@ impl Writer {
         self.writer.write_f32::<LittleEndian>(p.z).unwrap();
     }
 
-    fn write_scalars(&mut self, scalars: &[f32]) {
+    fn write_sp(&mut self, scalars: &[f32]) {
         for &scalar in scalars {
             self.writer.write_f32::<LittleEndian>(scalar).unwrap();
         }
