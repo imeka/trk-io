@@ -8,6 +8,16 @@ use tractogram::{Point, RefTractogramItem, Tractogram, TractogramItem};
 use {Affine, Affine4, CHeader, Header, Translation};
 use affine::get_affine_and_translation;
 
+macro_rules! write_streamline {
+    ($writer:ident, $streamline:expr, $nb_points:expr) => {
+        $writer.writer.write_i32::<LittleEndian>($nb_points as i32).unwrap();
+        for p in $streamline {
+            $writer.write_point(&p);
+        }
+        $writer.real_n_count += 1;
+    }
+}
+
 pub struct Writer {
     writer: BufWriter<File>,
     pub affine4: Affine4,
@@ -74,12 +84,8 @@ impl<'data> Writable for RefTractogramItem<'data> {
 }
 
 impl<'data> Writable for &'data [Point] {
-    fn write(self, w: &mut Writer) {
-        w.writer.write_i32::<LittleEndian>(self.len() as i32).unwrap();
-        for p in self {
-            w.write_point(p);
-        }
-        w.real_n_count += 1;
+    fn write(self, writer: &mut Writer) {
+        write_streamline!(writer, self, self.len());
     }
 }
 
@@ -120,11 +126,7 @@ impl Writer {
     pub fn write_from_iter<I>(&mut self, streamline: I, len: usize)
         where I: IntoIterator<Item = Point>
     {
-        self.writer.write_i32::<LittleEndian>(len as i32).unwrap();
-        for p in streamline {
-            self.write_point(&p);
-        }
-        self.real_n_count += 1;
+        write_streamline!(self, streamline, len);
     }
 
     fn write_point(&mut self, p: &Point) {
