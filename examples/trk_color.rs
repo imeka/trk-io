@@ -10,9 +10,9 @@ use trk_io::{Header, Point, Reader, Writer};
 static USAGE: &'static str = "
 Color a TrackVis (.trk) file.
 
-This will add 3 scalars (color_x, color_y, color_z) per point, so the output file will weight
-around the double as the input file. Please note that coloring by 'local' orientation may be
-useless as some programs already use this method by default to color the streamlines.
+This will add 3 scalars (color_x, color_y, color_z) per point. Please note that
+coloring by 'local' orientation may be useless as some programs already use
+this method by default to color the streamlines.
 
 Usage:
   trk_color uniform <r> <g> <b> <input> <output> [options]
