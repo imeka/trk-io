@@ -56,11 +56,7 @@ impl Reader {
         while let Ok(nb_points) = self.reader.read_i32::<E>() {
             lengths.push(nb_points as usize);
             self.read_streamline::<E>(&mut v, &mut scalars, nb_points as usize);
-
-            for _ in 0..self.nb_properties {
-                properties.push(self.reader.read_f32::<E>().unwrap());
-            }
-            properties.end_push();
+            self.read_properties_to_arr::<E>(&mut properties);
         }
 
         self.float_buffer = vec![];
@@ -90,6 +86,19 @@ impl Reader {
         }
         scalars.end_push();
     }
+
+    fn read_properties_to_arr<E: ByteOrder>(&mut self, properties: &mut ArraySequence<f32>) {
+        for _ in 0..self.nb_properties {
+            properties.push(self.reader.read_f32::<E>().unwrap());
+        }
+        properties.end_push();
+    }
+
+    fn read_properties_to_vec<E: ByteOrder>(&mut self, properties: &mut Vec<f32>) {
+        for _ in 0..self.nb_properties {
+            properties.push(self.reader.read_f32::<E>().unwrap());
+        }
+    }
 }
 
 impl Iterator for Reader {
@@ -106,18 +115,12 @@ impl Iterator for Reader {
             let mut properties = Vec::with_capacity(self.nb_properties);
             match self.endianness {
                 Endianness::Little => {
-                    self.read_streamline::<LittleEndian>(
-                        &mut streamline, &mut scalars, nb_points as usize);
-                    for _ in 0..self.nb_properties {
-                        properties.push(self.reader.read_f32::<LittleEndian>().unwrap());
-                    }
+                    self.read_streamline::<LittleEndian>(&mut streamline, &mut scalars, nb_points);
+                    self.read_properties_to_vec::<LittleEndian>(&mut properties);
                 },
                 Endianness::Big => {
-                    self.read_streamline::<BigEndian>(
-                        &mut streamline, &mut scalars, nb_points as usize);
-                    for _ in 0..self.nb_properties {
-                        properties.push(self.reader.read_f32::<BigEndian>().unwrap());
-                    }
+                    self.read_streamline::<BigEndian>(&mut streamline, &mut scalars, nb_points);
+                    self.read_properties_to_vec::<BigEndian>(&mut properties);
                 }
             };
 
