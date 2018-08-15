@@ -19,11 +19,11 @@ macro_rules! write_streamline {
             let scalars = $scalars.chunks($writer.nb_scalars);
             for (p, scalars) in $streamline.into_iter().zip(scalars) {
                 $writer.write_point(&p);
-                $writer.write_sp(scalars);
+                $writer.write_f32s(scalars);
             }
         }
 
-        $writer.write_sp($properties);
+        $writer.write_f32s($properties);
     };
     // Fast method, without scalars and properties
     ($writer:ident, $streamline:expr, $nb_points:expr) => {
@@ -123,9 +123,9 @@ impl Writer {
         self.writer.write_f32::<LittleEndian>(p.z).unwrap();
     }
 
-    fn write_sp(&mut self, scalars: &[f32]) {
-        for &scalar in scalars {
-            self.writer.write_f32::<LittleEndian>(scalar).unwrap();
+    fn write_f32s(&mut self, data: &[f32]) {
+        for &d in data {
+            self.writer.write_f32::<LittleEndian>(d).unwrap();
         }
     }
 }
