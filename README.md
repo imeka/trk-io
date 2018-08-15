@@ -8,19 +8,22 @@
   ``nibabel.streamlines`` and ``MI-Brain`` would.
 - Reading and writing is tested as much as in ``nibabel.streamlines``.
 - ``Reader`` can read all streamlines at once or can be used as a generator.
-  Handles endianness.
+- Scalars and properties are supported when reading and writing trk. You can
+  find some examples in ``trk_color.rs``.
 - Write all at once or streamline per streamline.
 - Follows ``nibabel.streamlines`` architecture (all 3D points are in a single
   ``Vec![Point3D]``). Currently, this is only useful for performance, but it may
   lead to easier changes when and if we support BLAS.
 - Handles endianness.
+- Some useful tools are coded in `examples/*.rs`. It's a good way to learn how
+  to use this library.
 
 ## Examples
 
 ```rust
 // Read complete streamlines to memory
-let streamlines = Reader::new("bundle.trk").read_all();
-for streamline in &streamlines {
+let tractogram = Reader::new("bundle.trk").unwrap().read_all();
+for streamline in &tractogram.streamlines {
     println!("Nb points: {}", streamline.len());
     for point in streamline {
         println!("{}", point);
@@ -29,10 +32,12 @@ for streamline in &streamlines {
 ```
 ```rust
 // Simple read/write. Using a generator (read one streamline at a time)
-let reader = Reader::new("full_brain.trk");
+let reader = Reader::new("full_brain.trk").unwrap();
 let mut writer = Writer::new("copy.trk", Some(reader.header.clone()));
-for streamline in reader.into_iter() {
-    writer.write(streamline);
+for item in reader.into_iter() {
+    // data is a TractogramItem, which is a (streamline, scalars, properties)
+    // see examples/trk_colors.rs
+    writer.write(item);
 }
 // The new file will be completed only at the end of the scope. The
 // 'n_count' field is written in the destructor because we don't
@@ -44,8 +49,7 @@ for streamline in reader.into_iter() {
 There's still a lot of work to do but it should work perfectly for simple use cases. In particular, future versions should be able to:
 
 - Support TCK reading/writing
-- Better handling of scalars and properties. There's currently a way to access them but I wouldn't call it conveniant. They are in the header so you need to zip over them yourself.
-- Create some binary tools using this lib, e.g. show_affine, count_tracks, pruning, strip_info, color, etc.
+- Create some binary tools using this lib, e.g. show_affine, count_tracks, pruning, strip_info, etc.
 - Support for `ops.Range`, e.g. `streamlines[0..10]`
 
 Your help is much appreciated. Consider filing an [issue](https://github.com/imeka/trk-io/issues) in case something is missing for your use case to work. Pull requests are also welcome.
