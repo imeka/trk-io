@@ -47,7 +47,7 @@ fn main() {
     let first_part = upto / 2;
 
     let reader = Reader::new(args.get_str("<input>")).expect("Read header");
-    for (i, streamline) in reader.into_iter().enumerate() {
+    for (i, (streamline, _, _)) in reader.into_iter().enumerate() {
         let len = streamline.len();
         if len > upto {
             streamline[0..first_part].iter().for_each(&print);

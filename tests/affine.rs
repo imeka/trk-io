@@ -22,14 +22,15 @@ mod nifti_tests {
             let mut writer = Writer::new(
                 &write_to, Some(Header::from_nifti(&header))).unwrap();
             writer.apply_affine(&raw_affine_from_nifti(&header));
-            writer.write(&[Point::new(13.75, 27.90, 51.55),
-                           Point::new(14.00, 27.95, 51.98),
-                           Point::new(14.35, 28.05, 52.33)]);
+            writer.write(&[
+                Point::new(13.75, 27.90, 51.55),
+                Point::new(14.00, 27.95, 51.98),
+                Point::new(14.35, 28.05, 52.33)][..]);
         }
 
         // Loading them back without the right transformation is not supposed to give back the same
         // points. Results are exactly the same as with DiPy.
-        let (_, streamlines) = load_trk(&write_to);
+        let streamlines = load_trk(&write_to).1.streamlines;
         let streamline = &streamlines[0];
         assert_eq!(streamline[0], Point::new(-82.54104, -25.178139, 37.788338));
         assert_eq!(streamline[1], Point::new(-81.933876, -25.032265, 38.850258));
@@ -79,8 +80,8 @@ mod nifti_tests {
                                                0.0, 0.0, 1.0));
         assert_eq!(header.translation, Translation::new(91.0, -127.0, -73.0));
         assert_eq!(header.nb_streamlines, 0);
-        assert_eq!(header.scalars.len(), 0);
-        assert_eq!(header.properties.len(), 0);
+        assert_eq!(header.scalars_name.len(), 0);
+        assert_eq!(header.properties_name.len(), 0);
     }
 
     #[test]

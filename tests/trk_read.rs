@@ -1,15 +1,18 @@
-
 extern crate trk_io;
 
-use trk_io::{Affine, ArraySequence, Header, Point, Reader, Translation};
+use trk_io::{Affine, ArraySequence, Header, Point, Reader, Tractogram, Translation};
 
 #[test]
 fn test_load_empty() {
-    let streamlines = Reader::new("data/empty.trk").unwrap().read_all();
+    let Tractogram { streamlines, scalars, properties } =
+        Reader::new("data/empty.trk").unwrap().read_all();
+
     assert_eq!(streamlines.len(), 0);
     for _ in &streamlines {
         panic!("Failed test.");
     }
+    assert!(scalars.is_empty());
+    assert!(properties.is_empty());
 
     // Test generator
     let reader = Reader::new("data/empty.trk").unwrap();
@@ -28,15 +31,19 @@ fn test_load_simple() {
                  Point::new(9.0, 10.0, 11.0),
                  Point::new(12.0, 13.0, 14.0)];
 
-    let streamlines = Reader::new("data/simple.trk").unwrap().read_all();
+    let Tractogram { streamlines, scalars, properties } =
+        Reader::new("data/simple.trk").unwrap().read_all();
+
     assert_eq!(streamlines.len(), 3);
     assert_eq!(streamlines[0], first);
     assert_eq!(streamlines[1], second);
     assert_eq!(streamlines[2], third);
+    assert!(scalars.is_empty());
+    assert!(properties.is_empty());
 
     // Test generator
     let reader = Reader::new("data/empty.trk").unwrap();
-    for (i, streamline) in reader.into_iter().enumerate() {
+    for (i, (streamline, _, _ )) in reader.into_iter().enumerate() {
         if i == 0 {
             assert_eq!(streamline, first);
         } else if i == 1 {
@@ -52,7 +59,8 @@ fn test_load_simple() {
 #[test]
 fn test_load_standard() {
     let mut reader = Reader::new("data/standard.trk").unwrap();
-    let streamlines = reader.read_all();
+    let Tractogram { streamlines, scalars, properties } = reader.read_all();
+
     assert_eq!(reader.affine, Affine::new(1.0, 0.0, 0.0,
                                           0.0, 1.0, 0.0,
                                           0.0, 0.0, 1.0));
@@ -65,10 +73,12 @@ fn test_load_standard() {
     assert_eq!(streamlines[1], [Point::new(-0.5, 1.5, 1.0),
                                 Point::new(0.0, 0.0, 2.0),
                                 Point::new(0.5, -1.5, 3.0)]);
+    assert!(scalars.is_empty());
+    assert!(properties.is_empty());
 
     // Test generator
     let reader = Reader::new("data/empty.trk").unwrap();
-    for streamline in reader.into_iter() {
+    for (streamline, _, _ ) in reader.into_iter() {
         assert_eq!(streamline.len(), 3);
     }
 }
@@ -76,7 +86,7 @@ fn test_load_standard() {
 #[test]
 fn test_load_standard_lps() {
     let mut reader = Reader::new("data/standard.LPS.trk").unwrap();
-    let streamlines = reader.read_all();
+    let Tractogram { streamlines, scalars, properties } = reader.read_all();
     assert_eq!(reader.affine, Affine::new(-1.0, 0.0, 0.0,
                                           0.0, -1.0, 0.0,
                                           0.0, 0.0, 1.0));
@@ -89,12 +99,14 @@ fn test_load_standard_lps() {
     assert_eq!(streamlines[1], [Point::new(-0.5, 1.5, 1.0),
                                 Point::new(0.0, 0.0, 2.0),
                                 Point::new(0.5, -1.5, 3.0)]);
+    assert!(scalars.is_empty());
+    assert!(properties.is_empty());
 }
 
 #[test]
 fn test_load_complex() {
     let mut reader = Reader::new("data/complex.trk").unwrap();
-    let streamlines = reader.read_all();
+    let Tractogram { streamlines, scalars, properties } = reader.read_all();
     assert_eq!(reader.affine, Affine::new(1.0, 0.0, 0.0,
                                           0.0, 1.0, 0.0,
                                           0.0, 0.0, 1.0));
@@ -110,7 +122,7 @@ fn test_load_complex() {
                                 Point::new(9.0, 10.0, 11.0),
                                 Point::new(12.0, 13.0, 14.0)]);
 
-    check_complex_scalars_and_properties(reader.header);
+    check_complex_scalars_and_properties(reader.header, scalars, properties);
 }
 
 #[test]
@@ -124,16 +136,16 @@ fn test_load_complex_big_endian() {
                  Point::new(12.0, 13.0, 14.0)];
 
     let mut reader = Reader::new("data/complex_big_endian.trk").unwrap();
-    let streamlines = reader.read_all();
+    let Tractogram { streamlines, scalars, properties } = reader.read_all();
     assert_eq!(streamlines.len(), 3);
     assert_eq!(streamlines[0], first);
     assert_eq!(streamlines[1], second);
     assert_eq!(streamlines[2], third);
-    check_complex_scalars_and_properties(reader.header);
+    check_complex_scalars_and_properties(reader.header, scalars, properties);
 
     // Test generator
     let reader = Reader::new("data/complex_big_endian.trk").unwrap();
-    for (i, streamline) in reader.into_iter().enumerate() {
+    for (i, (streamline, _, _ )) in reader.into_iter().enumerate() {
         if i == 0 {
             assert_eq!(streamline, first);
         } else if i == 1 {
@@ -146,40 +158,34 @@ fn test_load_complex_big_endian() {
     }
 }
 
-fn check_complex_scalars_and_properties(header: Header) {
+fn check_complex_scalars_and_properties(
+    header: Header,
+    scalars: ArraySequence<f32>,
+    properties: ArraySequence<f32>
+) {
     // Scalars
-    let colors_x = ArraySequence::new(
-        vec![1, 2, 5], vec![1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    let colors_y = ArraySequence::new(
-        vec![1, 2, 5], vec![0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-    let colors_z = ArraySequence::new(
-        vec![1, 2, 5], vec![0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0]);
-    assert!(header.scalars[0] == (String::from("colors"), colors_x));
-    assert!(header.scalars[1] == (String::from("colors"), colors_y));
-    assert!(header.scalars[2] == (String::from("colors"), colors_z));
-
-    let fa = ArraySequence::new(
-        vec![1, 2, 5],
-        vec![0.200000003, 0.300000012, 0.400000006, 0.500000000,
-             0.600000024, 0.600000024, 0.699999988, 0.800000012]);
-    assert!(header.scalars[3] == (String::from("fa"), fa));
+    assert_eq!(header.scalars_name, vec![
+        String::from("colors"),
+        String::from("colors"),
+        String::from("colors"),
+        String::from("fa")]);
+    assert_eq!(&scalars[0], &[1.0, 0.0, 0.0, 0.200000003]);
+    assert_eq!(&scalars[1], &[0.0, 1.0, 0.0, 0.300000012,
+                              0.0, 1.0, 0.0, 0.400000006]);
+    assert_eq!(&scalars[2], &[0.0, 0.0, 1.0, 0.500000000,
+                              0.0, 0.0, 1.0, 0.600000024,
+                              0.0, 0.0, 1.0, 0.600000024,
+                              0.0, 0.0, 1.0, 0.699999988,
+                              0.0, 0.0, 1.0, 0.800000012]);
 
     // Properties
-    assert_eq!(
-        header.properties[0],
-        (String::from("mean_colors"), vec![1.0, 0.0, 0.0]));
-    assert_eq!(
-        header.properties[1],
-        (String::from("mean_colors"), vec![0.0, 1.0, 0.0]));
-    assert_eq!(
-        header.properties[2],
-        (String::from("mean_colors"), vec![0.0, 0.0, 1.0]));
-    assert_eq!(
-        header.properties[3],
-        (String::from("mean_curvature"),
-         vec![1.11000001, 2.11000001, 3.11000001]));
-    assert_eq!(
-        header.properties[4],
-        (String::from("mean_torsion"),
-         vec![1.22000003, 2.22000003, 3.22000003]));
+    assert_eq!(header.properties_name, vec![
+        String::from("mean_colors"),
+        String::from("mean_colors"),
+        String::from("mean_colors"),
+        String::from("mean_curvature"),
+        String::from("mean_torsion")]);
+    assert_eq!(&properties[0], &[1.0, 0.0, 0.0, 1.11000001, 1.22000003]);
+    assert_eq!(&properties[1], &[0.0, 1.0, 0.0, 2.11000001, 2.22000003]);
+    assert_eq!(&properties[2], &[0.0, 0.0, 1.0, 3.11000001, 3.22000003]);
 }

@@ -4,7 +4,8 @@ use std::path::Path;
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 
-use {Affine, Header, Point, Points, Streamlines, Translation};
+use tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem};
+use {Affine, ArraySequence, Header, Translation};
 use cheader::{Endianness};
 
 pub struct Reader {
@@ -14,6 +15,8 @@ pub struct Reader {
     pub affine: Affine,
     pub translation: Translation,
 
+    nb_scalars: usize,
+    nb_properties: usize,
     nb_floats_per_point: usize,
     float_buffer: Vec<f32>
 }
@@ -26,38 +29,44 @@ impl Reader {
         let (header, endianness) = Header::read(&mut reader)?;
         let affine = header.affine;
         let translation = header.translation;
-        let nb_floats_per_point = 3 + header.scalars.len() as usize;
+        let nb_scalars = header.scalars_name.len();
+        let nb_properties = header.properties_name.len();
+        let nb_floats_per_point = 3 + nb_scalars;
 
         Ok(Reader {
             reader, endianness, header, affine, translation,
-            nb_floats_per_point, float_buffer: Vec::with_capacity(300)
+            nb_scalars, nb_properties, nb_floats_per_point,
+            float_buffer: Vec::with_capacity(300)
         })
     }
 
-    pub fn read_all(&mut self) -> Streamlines {
+    pub fn read_all(&mut self) -> Tractogram {
         match self.endianness {
             Endianness::Little => self.read_all_::<LittleEndian>(),
             Endianness::Big => self.read_all_::<BigEndian>()
         }
     }
 
-    fn read_all_<E: ByteOrder>(&mut self) -> Streamlines {
-        self.header.scalars.reserve(300);
-        self.header.properties.reserve(self.header.nb_streamlines);
-
+    fn read_all_<E: ByteOrder>(&mut self) -> Tractogram {
+        // TODO Anything we can do to reerve?
         let mut lengths = Vec::new();
         let mut v = Vec::with_capacity(300);
+        let mut scalars = ArraySequence::with_capacity(300);
+        let mut properties = ArraySequence::with_capacity(300);
         while let Ok(nb_points) = self.reader.read_i32::<E>() {
             lengths.push(nb_points as usize);
-            self.read_streamline::<E>(&mut v, nb_points as usize);
+            self.read_streamline::<E>(&mut v, &mut scalars, nb_points as usize);
+            self.read_properties_to_arr::<E>(&mut properties);
         }
+
         self.float_buffer = vec![];
-        Streamlines::new(lengths, v)
+        Tractogram::new(Streamlines::new(lengths, v), scalars, properties)
     }
 
     fn read_streamline<E: ByteOrder>(
         &mut self,
         points: &mut Points,
+        scalars: &mut ArraySequence<f32>,
         nb_points: usize)
     {
         // Vec::resize never decreases capacity, it can only increase it
@@ -71,38 +80,51 @@ impl Reader {
             let p = Point::new(floats[0], floats[1], floats[2]);
             points.push((self.affine * p) + self.translation);
 
-            for (&mut (_, ref mut scalar), f) in self.header.scalars.iter_mut()
-                                                 .zip(&floats[3..]) {
-                scalar.push(*f);
+            for f in &floats[3..] {
+                scalars.push(*f);
             }
         }
+        scalars.end_push();
+    }
 
-        for &mut (_, ref mut scalar) in &mut self.header.scalars {
-            scalar.end_push();
+    fn read_properties_to_arr<E: ByteOrder>(&mut self, properties: &mut ArraySequence<f32>) {
+        for _ in 0..self.nb_properties {
+            properties.push(self.reader.read_f32::<E>().unwrap());
         }
+        properties.end_push();
+    }
 
-        for &mut (_, ref mut property) in &mut self.header.properties {
-            property.push(self.reader.read_f32::<E>().unwrap());
+    fn read_properties_to_vec<E: ByteOrder>(&mut self, properties: &mut Vec<f32>) {
+        for _ in 0..self.nb_properties {
+            properties.push(self.reader.read_f32::<E>().unwrap());
         }
     }
 }
 
 impl Iterator for Reader {
-    type Item = Points;
+    type Item = TractogramItem;
 
-    fn next(&mut self) -> Option<Points> {
+    fn next(&mut self) -> Option<TractogramItem> {
         if let Ok(nb_points) = match self.endianness {
             Endianness::Little => self.reader.read_i32::<LittleEndian>(),
             Endianness::Big => self.reader.read_i32::<BigEndian>()
         } {
-            let mut points = Vec::with_capacity(nb_points as usize);
+            let nb_points = nb_points as usize;
+            let mut streamline = Vec::with_capacity(nb_points);
+            let mut scalars = ArraySequence::with_capacity(nb_points * self.nb_scalars);
+            let mut properties = Vec::with_capacity(self.nb_properties);
             match self.endianness {
-                Endianness::Little => self.read_streamline::<LittleEndian>(
-                    &mut points, nb_points as usize),
-                Endianness::Big => self.read_streamline::<BigEndian>(
-                    &mut points, nb_points as usize)
+                Endianness::Little => {
+                    self.read_streamline::<LittleEndian>(&mut streamline, &mut scalars, nb_points);
+                    self.read_properties_to_vec::<LittleEndian>(&mut properties);
+                },
+                Endianness::Big => {
+                    self.read_streamline::<BigEndian>(&mut streamline, &mut scalars, nb_points);
+                    self.read_properties_to_vec::<BigEndian>(&mut properties);
+                }
             };
-            Some(points)
+
+            Some((streamline, scalars, properties))
         } else {
             None
         }

@@ -1,16 +1,12 @@
-
 use std::fs::{File};
 use std::io::{BufReader, Result};
 
 use byteorder::{WriteBytesExt};
 #[cfg(feature = "use_nifti")] use nifti::NiftiHeader;
 
-use {Affine, Affine4, ArraySequence, Translation};
+use {Affine, Affine4, Translation};
 use affine::get_affine_and_translation;
 use cheader::{CHeader, Endianness};
-
-type Scalar = (String, ArraySequence<f32>);
-type Property = (String, Vec<f32>);
 
 #[derive(Clone)]
 pub struct Header {
@@ -20,8 +16,8 @@ pub struct Header {
     pub translation: Translation,
     pub nb_streamlines: usize,
 
-    pub scalars: Vec<Scalar>,
-    pub properties: Vec<Property>
+    pub scalars_name: Vec<String>,
+    pub properties_name: Vec<String>
 }
 
 impl Header {
@@ -33,8 +29,14 @@ impl Header {
         let (affine, translation) = get_affine_and_translation(&affine4);
         Header {
             c_header, affine4, affine, translation, nb_streamlines: 0,
-            scalars: vec![], properties: vec![]
+            scalars_name: vec![], properties_name: vec![]
         }
+    }
+
+    pub fn add_scalar(&mut self, name: &str) -> Result<()> {
+        self.c_header.add_scalar(name)?;
+        self.scalars_name.push(name.to_string());
+        Ok(())
     }
 
     pub fn read(reader: &mut BufReader<File>) -> Result<(Header, Endianness)> {
@@ -42,16 +44,12 @@ impl Header {
         let affine4 = c_header.get_affine();
         let (affine, translation) = get_affine_and_translation(&affine4);
         let nb_streamlines = c_header.n_count as usize;
-        let scalars = c_header.get_scalars_name().into_iter().map(
-            |scalar| (scalar, ArraySequence::empty())
-        ).collect();
-        let properties = c_header.get_properties_name().into_iter().map(
-            |property| (property, vec![])
-        ).collect();
+        let scalars_name = c_header.get_scalars_name();
+        let properties_name = c_header.get_properties_name();
 
         let header = Header {
             c_header, affine4, affine, translation,
-            nb_streamlines, scalars, properties
+            nb_streamlines, scalars_name, properties_name
         };
         Ok((header, endianness))
     }
@@ -69,8 +67,8 @@ impl Default for Header {
             affine: Affine::identity(),
             translation: Translation::zeros(),
             nb_streamlines: 0,
-            scalars: vec![],
-            properties: vec![]
+            scalars_name: vec![],
+            properties_name: vec![]
         }
     }
 }
@@ -80,7 +78,7 @@ impl PartialEq for Header {
         self.affine == other.affine &&
         self.translation == other.translation &&
         self.nb_streamlines == other.nb_streamlines &&
-        self.scalars == other.scalars &&
-        self.properties == other.properties
+        self.scalars_name == other.scalars_name &&
+        self.properties_name == other.properties_name
     }
 }
