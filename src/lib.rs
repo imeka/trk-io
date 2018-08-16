@@ -6,7 +6,7 @@ pub mod affine;
 mod array_sequence;
 mod cheader;
 mod header;
-mod orientation;
+pub mod orientation;
 mod tractogram;
 mod reader;
 mod writer;
