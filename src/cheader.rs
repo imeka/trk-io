@@ -1,15 +1,13 @@
-
 use std::fmt;
-use std::fs::{File};
+use std::fs::File;
 use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Result, Seek, SeekFrom};
 use std::str::from_utf8;
 
-use byteorder::{BigEndian, ByteOrder, LittleEndian,
-                ReadBytesExt, WriteBytesExt};
+use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt};
 use nalgebra::{U3, Vector4};
 
 #[cfg(feature = "use_nifti")] use Affine;
-use Affine4;
+use {Affine4, TrkEndianness};
 use orientation::{affine_to_axcodes, axcodes_to_orientations,
                   inverse_orientations_affine, orientations_transform};
 
@@ -202,26 +200,26 @@ impl CHeader {
     pub fn write<W: WriteBytesExt>(&self, writer: &mut W) -> Result<()> {
         writer.write(&self.id_string)?;
         for i in &self.dim {
-            writer.write_i16::<LittleEndian>(*i)?;
+            writer.write_i16::<TrkEndianness>(*i)?;
         }
         for f in &self.voxel_size {
-            writer.write_f32::<LittleEndian>(*f)?;
+            writer.write_f32::<TrkEndianness>(*f)?;
         }
         for f in &self.origin {
-            writer.write_f32::<LittleEndian>(*f)?;
+            writer.write_f32::<TrkEndianness>(*f)?;
         }
-        writer.write_i16::<LittleEndian>(self.n_scalars)?;
+        writer.write_i16::<TrkEndianness>(self.n_scalars)?;
         writer.write(&self.scalar_name)?;
-        writer.write_i16::<LittleEndian>(self.n_properties)?;
+        writer.write_i16::<TrkEndianness>(self.n_properties)?;
         writer.write(&self.property_name)?;
         for f in &self.vox_to_ras {
-            writer.write_f32::<LittleEndian>(*f)?;
+            writer.write_f32::<TrkEndianness>(*f)?;
         }
         writer.write(&self.reserved)?;
         writer.write(&self.voxel_order)?;
         writer.write(&self.pad2)?;
         for f in &self.image_orientation_patient {
-            writer.write_f32::<LittleEndian>(*f)?;
+            writer.write_f32::<TrkEndianness>(*f)?;
         }
         writer.write(&self.pad1)?;
         writer.write_u8(self.invert_x)?;
@@ -230,9 +228,9 @@ impl CHeader {
         writer.write_u8(self.swap_x)?;
         writer.write_u8(self.swap_y)?;
         writer.write_u8(self.swap_z)?;
-        writer.write_i32::<LittleEndian>(self.n_count)?;
-        writer.write_i32::<LittleEndian>(self.version)?;
-        writer.write_i32::<LittleEndian>(self.hdr_size)?;
+        writer.write_i32::<TrkEndianness>(self.n_count)?;
+        writer.write_i32::<TrkEndianness>(self.version)?;
+        writer.write_i32::<TrkEndianness>(self.hdr_size)?;
 
         Ok(())
     }

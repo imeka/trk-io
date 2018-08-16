@@ -2,10 +2,10 @@ use std::fs::File;
 use std::io::{BufWriter, Result};
 use std::path::Path;
 
-use byteorder::{LittleEndian, WriteBytesExt};
+use byteorder::WriteBytesExt;
 
 use tractogram::{Point, RefTractogramItem, Tractogram, TractogramItem};
-use {Affine, Affine4, CHeader, Header, Translation};
+use {Affine, Affine4, CHeader, Header, Translation, TrkEndianness};
 use affine::get_affine_and_translation;
 
 macro_rules! write_streamline {
@@ -13,7 +13,7 @@ macro_rules! write_streamline {
         if $writer.nb_scalars == 0 {
             $streamline.write($writer);
         } else {
-            $writer.writer.write_i32::<LittleEndian>($streamline.len() as i32).unwrap();
+            $writer.writer.write_i32::<TrkEndianness>($streamline.len() as i32).unwrap();
             $writer.real_n_count += 1;
 
             let scalars = $scalars.chunks($writer.nb_scalars);
@@ -27,7 +27,7 @@ macro_rules! write_streamline {
     };
     // Fast method, without scalars and properties
     ($writer:ident, $streamline:expr, $nb_points:expr) => {
-        $writer.writer.write_i32::<LittleEndian>($nb_points as i32).unwrap();
+        $writer.writer.write_i32::<TrkEndianness>($nb_points as i32).unwrap();
         for p in $streamline {
             $writer.write_point(&p);
         }
@@ -118,14 +118,14 @@ impl Writer {
 
     fn write_point(&mut self, p: &Point) {
         let p = self.affine * p + self.translation;
-        self.writer.write_f32::<LittleEndian>(p.x).unwrap();
-        self.writer.write_f32::<LittleEndian>(p.y).unwrap();
-        self.writer.write_f32::<LittleEndian>(p.z).unwrap();
+        self.writer.write_f32::<TrkEndianness>(p.x).unwrap();
+        self.writer.write_f32::<TrkEndianness>(p.y).unwrap();
+        self.writer.write_f32::<TrkEndianness>(p.z).unwrap();
     }
 
     fn write_f32s(&mut self, data: &[f32]) {
         for &d in data {
-            self.writer.write_f32::<LittleEndian>(d).unwrap();
+            self.writer.write_f32::<TrkEndianness>(d).unwrap();
         }
     }
 }
@@ -135,7 +135,7 @@ impl Drop for Writer {
     fn drop(&mut self) {
         CHeader::seek_n_count_field(&mut self.writer).expect(
             "Unable to seek to 'n_count' field before closing trk file.");
-        self.writer.write_i32::<LittleEndian>(self.real_n_count).expect(
+        self.writer.write_i32::<TrkEndianness>(self.real_n_count).expect(
             "Unable to write 'n_count' field before closing trk file.");
     }
 }

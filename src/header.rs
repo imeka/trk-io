@@ -1,7 +1,7 @@
 use std::fs::{File};
 use std::io::{BufReader, Result};
 
-use byteorder::{WriteBytesExt};
+use byteorder::WriteBytesExt;
 #[cfg(feature = "use_nifti")] use nifti::NiftiHeader;
 
 use {Affine, Affine4, Translation};
