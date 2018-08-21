@@ -7,6 +7,8 @@
 - Can read and write `TrackVis` files. Handles affine transformation as
   ``nibabel.streamlines`` and ``MI-Brain`` would.
 - Reading and writing is tested as much as in ``nibabel.streamlines``.
+- Can optionally use the ``nifti-rs`` crate, which can then be used to create a
+  trk header from a ``NiftiHeader``, like you would do in ``nibabel``
 - ``Reader`` can read all streamlines at once or can be used as a generator.
 - Scalars and properties are supported when reading and writing trk. You can
   find some examples in ``trk_color.rs``.
@@ -31,13 +33,15 @@ for streamline in &tractogram.streamlines {
 }
 ```
 ```rust
-// Simple read/write. Using a generator (read one streamline at a time)
+// Simple read/write. Using a generator, so it will load only
+// one streamline in memory.
 let reader = Reader::new("full_brain.trk").unwrap();
-let mut writer = Writer::new("copy.trk", Some(reader.header.clone()));
-for item in reader.into_iter() {
-    // data is a TractogramItem, which is a (streamline, scalars, properties)
-    // see examples/trk_colors.rs
-    writer.write(item);
+let mut writer = Writer::new(
+    "copy.trk", Some(reader.header.clone()));
+for tractogram_item in reader.into_iter() {
+    // tractogram_item is a TractogramItem, which is a tuple of
+    // (streamline, scalars, properties).
+    writer.write(tractogram_item);
 }
 // The new file will be completed only at the end of the scope. The
 // 'n_count' field is written in the destructor because we don't
