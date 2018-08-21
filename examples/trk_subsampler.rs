@@ -60,12 +60,11 @@ fn main() {
 
     let mut rng = match args.get_str("--seed").parse::<u8>() {
         Ok(seed) => SmallRng::from_seed([seed; 16]),
-        _        => SmallRng::from_entropy()
+        Err(_)   => SmallRng::from_entropy()
     };
 
     if let Ok(percent) = args.get_str("--percent").parse::<f32>() {
         let percent = percent / 100.0;
-
         for streamline in reader.into_iter() {
             if rng.gen::<f32>() < percent {
                 writer.write(streamline);
@@ -74,12 +73,11 @@ fn main() {
     } else if let Ok(nb) = args.get_str("--number").parse::<usize>() {
         let size = reader.header.nb_streamlines;
         let number = size.min(nb);
-
         if number == 0 {
             panic!("You requested a subsampling of 0 streamline. \
                     Please ask for any non-zero positive number.");
         }
-        if number >= size {
+        else if number >= size {
             println!(
                 "You requested a subsampling of {} streamlines, \
                  which is more than the total number of streamlines. \
@@ -89,9 +87,7 @@ fn main() {
         } else {
             sampling_write(&mut writer, reader, number, &mut rng);
         }
-
     } else {
         panic!("--percent or --number can't be parsed to a positive number");
     }
 }
-

@@ -6,7 +6,7 @@ use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 
 use tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem};
 use {Affine, ArraySequence, Header, Translation};
-use cheader::{Endianness};
+use cheader::Endianness;
 
 pub struct Reader {
     reader: BufReader<File>,

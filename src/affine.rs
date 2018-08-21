@@ -1,6 +1,4 @@
-
-#[cfg(feature = "use_nifti")]
-use nifti::NiftiHeader;
+#[cfg(feature = "use_nifti")] use nifti::NiftiHeader;
 use nalgebra::{Matrix3, Matrix4, Vector3, Scalar, U3};
 
 #[cfg(feature = "use_nifti")] use {Affine4, CHeader};

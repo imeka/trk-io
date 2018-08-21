@@ -27,23 +27,23 @@ impl fmt::Display for Endianness {
 #[repr(C)]
 pub struct CHeader {
     pub id_string: [u8; 6],
-    pub dim: [i16; 3],                              // *
-    pub voxel_size: [f32; 3],                       // *
-    pub origin: [f32; 3],                           // *
-    pub n_scalars: i16,                             // *
-    pub scalar_name: [u8; 200],    // [10][20]      // *
-    pub n_properties: i16,                          // *
-    pub property_name: [u8; 200],  // [10][20]      // *
-    pub vox_to_ras: [f32; 16],     // [4][4]        // *
+    pub dim: [i16; 3],
+    pub voxel_size: [f32; 3],
+    pub origin: [f32; 3],
+    pub n_scalars: i16,
+    pub scalar_name: [u8; 200],    // [10][20]
+    pub n_properties: i16,
+    pub property_name: [u8; 200],  // [10][20]
+    pub vox_to_ras: [f32; 16],     // [4][4]
     pub reserved: [u8; 444],
-    pub voxel_order: [u8; 4],                       // *
+    pub voxel_order: [u8; 4],
     pub pad2: [u8; 4],
-    pub image_orientation_patient: [f32; 6],        // *
+    pub image_orientation_patient: [f32; 6],
     pub pad1: [u8; 2],
-    pub invert_x: u8,                               // *
+    pub invert_x: u8,
     pub invert_y: u8,
     pub invert_z: u8,
-    pub swap_x: u8,                                 // *
+    pub swap_x: u8,
     pub swap_y: u8,
     pub swap_z: u8,
     pub n_count: i32,
