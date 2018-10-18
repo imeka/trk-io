@@ -23,6 +23,6 @@ rand = "0.5"
 tempdir = "0.3"
 
 [dependencies.nifti]
-version = "0.5"
+version = "0.6"
 features = ["ndarray_volumes"]
 optional = true
