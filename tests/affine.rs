@@ -38,6 +38,19 @@ mod nifti_tests {
     }
 
     #[test]
+    fn test_qform_affine() {
+        let header = InMemNiftiObject::from_file(
+            "data/qform.nii.gz").unwrap().header().clone();
+        let affine = raw_affine_from_nifti(&header);
+        assert_eq!(affine, Affine4::new(
+            -0.9375, 0.0,    0.0, 59.557503,
+             0.0,    0.9375, 0.0, 73.172,
+             0.0,    0.0,    3.0, 43.4291,
+             0.0,    0.0,    0.0, 1.0
+        ));
+    }
+
+    #[test]
     fn test_simple_header_from_nifti() {
         let c_header = CHeader::from_nifti(
             [3, 100, 100, 100, 0, 0, 0, 0],
@@ -88,15 +101,15 @@ mod nifti_tests {
     fn test_complex_affine_from_nifti() {
         let nifti_header = InMemNiftiObject::from_file("data/3x3.nii.gz")
             .unwrap().header().clone();
-        assert_eq!(trackvis_to_rasmm(&nifti_header),
-                   Affine4::new(-1.0, 0.0, 0.0, 91.0,
-                                0.0, 1.0, 0.0, -127.0,
-                                0.0, 0.0, 1.0, -73.0,
-                                0.0, 0.0, 0.0, 1.0));
-        assert_eq!(rasmm_to_trackvis(&nifti_header),
-                   Affine4::new(-1.0, 0.0, 0.0, 91.0,
-                                0.0, 1.0, 0.0, 127.0,
-                                0.0, 0.0, 1.0, 73.0,
-                                0.0, 0.0, 0.0, 1.0));
+        assert_eq!(trackvis_to_rasmm(&nifti_header), Affine4::new(
+            -1.0, 0.0, 0.0, 91.0,
+             0.0, 1.0, 0.0, -127.0,
+             0.0, 0.0, 1.0, -73.0,
+             0.0, 0.0, 0.0, 1.0));
+        assert_eq!(rasmm_to_trackvis(&nifti_header), Affine4::new(
+            -1.0, 0.0, 0.0, 91.0,
+             0.0, 1.0, 0.0, 127.0,
+             0.0, 0.0, 1.0, 73.0,
+             0.0, 0.0, 0.0, 1.0));
     }
 }
