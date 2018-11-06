@@ -9,7 +9,8 @@ mod test;
 mod nifti_tests {
     use nifti::{InMemNiftiObject, NiftiObject};
     use trk_io::{Affine, Affine4, CHeader, Header, Point, Translation, Writer};
-    use trk_io::affine::{rasmm_to_trackvis, raw_affine_from_nifti, trackvis_to_rasmm};
+    use trk_io::affine::{rasmm_to_trackvis, trackvis_to_rasmm};
+    use trk_io::affine_nifti::raw_affine_from_nifti;
     use test::{get_random_trk_path, load_trk};
 
     #[test]
