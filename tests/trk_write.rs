@@ -148,10 +148,11 @@ fn test_write_standard_lps() {
 
     let (header, tractogram) = load_trk(&write_to);
     assert_eq!(header.nb_streamlines, 10);
-    assert_eq!(header.affine4, Affine4::new(-1.0, 0.0, 0.0, 3.5,
-                                            0.0, -1.0, 0.0, 13.5,
-                                            0.0, 0.0, 1.0, -1.0,
-                                            0.0, 0.0, 0.0, 1.0));
+    assert_eq!(header.affine4_to_rasmm, Affine4::new(
+        -1.0, 0.0, 0.0, 3.5,
+        0.0, -1.0, 0.0, 13.5,
+        0.0, 0.0, 1.0, -1.0,
+        0.0, 0.0, 0.0, 1.0));
     assert_eq!(tractogram.streamlines[0], [Point::new(-0.5, -1.5, 1.0),
                                            Point::new(0.0, 0.0, 2.0),
                                            Point::new(0.5, 1.5, 3.0)]);

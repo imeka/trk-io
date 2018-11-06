@@ -12,7 +12,7 @@ pub struct Reader {
     reader: BufReader<File>,
     endianness: Endianness,
     pub header: Header,
-    pub affine: Affine,
+    pub affine_to_rasmm: Affine,
     pub translation: Translation,
 
     nb_scalars: usize,
@@ -27,14 +27,14 @@ impl Reader {
         let mut reader = BufReader::new(f);
 
         let (header, endianness) = Header::read(&mut reader)?;
-        let affine = header.affine;
+        let affine_to_rasmm = header.affine_to_rasmm;
         let translation = header.translation;
         let nb_scalars = header.scalars_name.len();
         let nb_properties = header.properties_name.len();
         let nb_floats_per_point = 3 + nb_scalars;
 
         Ok(Reader {
-            reader, endianness, header, affine, translation,
+            reader, endianness, header, affine_to_rasmm, translation,
             nb_scalars, nb_properties, nb_floats_per_point,
             float_buffer: Vec::with_capacity(300)
         })
@@ -78,7 +78,7 @@ impl Reader {
 
         for floats in self.float_buffer.chunks(self.nb_floats_per_point) {
             let p = Point::new(floats[0], floats[1], floats[2]);
-            points.push((self.affine * p) + self.translation);
+            points.push((self.affine_to_rasmm * p) + self.translation);
 
             for f in &floats[3..] {
                 scalars.push(*f);

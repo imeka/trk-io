@@ -75,11 +75,11 @@ fn main() {
     println!("hdr_size: {:?}", header.hdr_size);
 
     if print_all {
-        let to_world = header.get_affine();
-        let to_rasmm = to_world.try_inverse().unwrap();
+        let to_rasmm = header.get_affine_to_rasmm();
+        let to_trackvis = to_rasmm.try_inverse().unwrap();
         println!("\n---------- Computed fields ----------");
         println!("Endianness {}", endianness);
-        print!("to world {}", to_world);
         print!("to rasmm {}", to_rasmm);
+        print!("to to_trackvis {}", to_trackvis);
     }
 }

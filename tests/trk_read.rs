@@ -61,9 +61,10 @@ fn test_load_standard() {
     let mut reader = Reader::new("data/standard.trk").unwrap();
     let Tractogram { streamlines, scalars, properties } = reader.read_all();
 
-    assert_eq!(reader.affine, Affine::new(1.0, 0.0, 0.0,
-                                          0.0, 1.0, 0.0,
-                                          0.0, 0.0, 1.0));
+    assert_eq!(reader.affine_to_rasmm, Affine::new(
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0));
     assert_eq!(reader.translation, Translation::new(-0.5, -1.5, -1.0));
 
     assert_eq!(streamlines.len(), 120);
@@ -87,9 +88,10 @@ fn test_load_standard() {
 fn test_load_standard_lps() {
     let mut reader = Reader::new("data/standard.LPS.trk").unwrap();
     let Tractogram { streamlines, scalars, properties } = reader.read_all();
-    assert_eq!(reader.affine, Affine::new(-1.0, 0.0, 0.0,
-                                          0.0, -1.0, 0.0,
-                                          0.0, 0.0, 1.0));
+    assert_eq!(reader.affine_to_rasmm, Affine::new(
+        -1.0, 0.0, 0.0,
+        0.0, -1.0, 0.0,
+        0.0, 0.0, 1.0));
     assert_eq!(reader.translation, Translation::new(3.5, 13.5, -1.0));
 
     assert_eq!(streamlines.len(), 120);
@@ -107,9 +109,10 @@ fn test_load_standard_lps() {
 fn test_load_complex() {
     let mut reader = Reader::new("data/complex.trk").unwrap();
     let Tractogram { streamlines, scalars, properties } = reader.read_all();
-    assert_eq!(reader.affine, Affine::new(1.0, 0.0, 0.0,
-                                          0.0, 1.0, 0.0,
-                                          0.0, 0.0, 1.0));
+    assert_eq!(reader.affine_to_rasmm, Affine::new(
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0));
     assert_eq!(reader.translation, Translation::new(-0.5, -0.5, -0.5));
 
     assert_eq!(streamlines.len(), 3);

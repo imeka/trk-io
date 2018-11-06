@@ -88,9 +88,10 @@ mod nifti_tests {
         assert_eq!(c_header.voxel_order, *b"LAS\0");
 
         let header = Header::from_nifti(&nifti_header);
-        assert_eq!(header.affine, Affine::new(-1.0, 0.0, 0.0,
-                                               0.0, 1.0, 0.0,
-                                               0.0, 0.0, 1.0));
+        assert_eq!(header.affine_to_rasmm, Affine::new(
+            -1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0));
         assert_eq!(header.translation, Translation::new(91.0, -127.0, -73.0));
         assert_eq!(header.nb_streamlines, 0);
         assert_eq!(header.scalars_name.len(), 0);

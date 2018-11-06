@@ -11,8 +11,8 @@ use cheader::{CHeader, Endianness};
 #[derive(Clone)]
 pub struct Header {
     c_header: CHeader,
-    pub affine4: Affine4,
-    pub affine: Affine,
+    pub affine4_to_rasmm: Affine4,
+    pub affine_to_rasmm: Affine,
     pub translation: Translation,
     pub nb_streamlines: usize,
 
@@ -25,10 +25,14 @@ impl Header {
     pub fn from_nifti(h: &NiftiHeader) -> Header {
         let c_header = CHeader::from_nifti(
             h.dim, h.pixdim, h.srow_x, h.srow_y, h.srow_z);
-        let affine4 = c_header.get_affine();
+        let affine4 = c_header.get_affine_to_rasmm();
         let (affine, translation) = get_affine_and_translation(&affine4);
         Header {
-            c_header, affine4, affine, translation, nb_streamlines: 0,
+            c_header,
+            affine4_to_rasmm: affine4,
+            affine_to_rasmm: affine,
+            translation,
+            nb_streamlines: 0,
             scalars_name: vec![], properties_name: vec![]
         }
     }
@@ -41,15 +45,20 @@ impl Header {
 
     pub fn read(reader: &mut BufReader<File>) -> Result<(Header, Endianness)> {
         let (c_header, endianness) = CHeader::read(reader)?;
-        let affine4 = c_header.get_affine();
+        let affine4 = c_header.get_affine_to_rasmm();
         let (affine, translation) = get_affine_and_translation(&affine4);
         let nb_streamlines = c_header.n_count as usize;
         let scalars_name = c_header.get_scalars_name();
         let properties_name = c_header.get_properties_name();
 
         let header = Header {
-            c_header, affine4, affine, translation,
-            nb_streamlines, scalars_name, properties_name
+            c_header,
+            affine4_to_rasmm: affine4,
+            affine_to_rasmm: affine,
+            translation,
+            nb_streamlines,
+            scalars_name,
+            properties_name
         };
         Ok((header, endianness))
     }
@@ -63,8 +72,8 @@ impl Default for Header {
     fn default() -> Header {
         Header {
             c_header: CHeader::default(),
-            affine4: Affine4::identity(),
-            affine: Affine::identity(),
+            affine4_to_rasmm: Affine4::identity(),
+            affine_to_rasmm: Affine::identity(),
             translation: Translation::zeros(),
             nb_streamlines: 0,
             scalars_name: vec![],
@@ -75,7 +84,7 @@ impl Default for Header {
 
 impl PartialEq for Header {
     fn eq(&self, other: &Header) -> bool {
-        self.affine == other.affine &&
+        self.affine_to_rasmm == other.affine_to_rasmm &&
         self.translation == other.translation &&
         self.nb_streamlines == other.nb_streamlines &&
         self.scalars_name == other.scalars_name &&

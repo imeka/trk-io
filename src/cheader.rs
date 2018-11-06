@@ -109,7 +109,14 @@ impl CHeader {
         read_names(&self.property_name, self.n_properties as usize)
     }
 
-    pub fn get_affine(&self) -> Affine4 {
+    /// Get affine mapping trackvis voxelmm space to RAS+ mm space
+    ///
+    /// The streamlines in a trackvis file are in 'voxelmm' space, where the coordinates refer to
+    /// the corner of the voxel.
+    ///
+    /// Compute the affine matrix that will bring them back to RAS+ mm space, where the coordinates
+    /// refer to the center of the voxel.
+    pub fn get_affine_to_rasmm(&self) -> Affine4 {
         let mut affine = Affine4::identity();
 
         let scale = Affine4::from_diagonal(&Vector4::new(

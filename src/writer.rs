@@ -92,7 +92,7 @@ impl Writer {
         let nb_scalars = header.scalars_name.len();
 
         // We are only interested in the inversed affine
-        let affine4 = header.affine4.try_inverse().expect(
+        let affine4 = header.affine4_to_rasmm.try_inverse().expect(
             "Unable to inverse 4x4 affine matrix");
         let (affine, translation) = get_affine_and_translation(&affine4);
 
