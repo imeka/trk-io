@@ -1,6 +1,6 @@
 extern crate trk_io;
 
-use trk_io::{Header};
+use trk_io::Header;
 
 #[test]
 fn test_add_scalar() {

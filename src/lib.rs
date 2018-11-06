@@ -1,15 +1,17 @@
 extern crate byteorder;
-#[cfg(feature = "use_nifti")] extern crate nifti;
 extern crate nalgebra;
+#[cfg(feature = "use_nifti")]
+extern crate nifti;
 
 pub mod affine;
-#[cfg(feature = "use_nifti")] pub mod affine_nifti;
+#[cfg(feature = "use_nifti")]
+pub mod affine_nifti;
 mod array_sequence;
 mod cheader;
 mod header;
 pub mod orientation;
-mod tractogram;
 mod reader;
+mod tractogram;
 mod writer;
 
 use byteorder::LittleEndian;
@@ -18,8 +20,8 @@ use nalgebra::{Matrix3, Matrix4, Vector3};
 pub use array_sequence::ArraySequence;
 pub use cheader::CHeader;
 pub use header::Header;
-pub use tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem};
 pub use reader::Reader;
+pub use tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem};
 pub use writer::Writer;
 
 pub type Affine = Matrix3<f32>;

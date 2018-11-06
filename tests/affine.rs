@@ -8,25 +8,27 @@ mod test;
 #[cfg(feature = "use_nifti")]
 mod nifti_tests {
     use nifti::{InMemNiftiObject, NiftiObject};
-    use trk_io::{Affine, Affine4, CHeader, Header, Point, Translation, Writer};
+    use test::{get_random_trk_path, load_trk};
     use trk_io::affine::{rasmm_to_trackvis, trackvis_to_rasmm};
     use trk_io::affine_nifti::raw_affine_from_nifti;
-    use test::{get_random_trk_path, load_trk};
+    use trk_io::{Affine, Affine4, CHeader, Header, Point, Translation, Writer};
 
     #[test]
     fn test_complex_affine() {
-        let header = InMemNiftiObject::from_file(
-            "data/complex_affine.nii.gz").unwrap().header().clone();
+        let header =
+            InMemNiftiObject::from_file("data/complex_affine.nii.gz").unwrap().header().clone();
         let write_to = get_random_trk_path();
 
         {
-            let mut writer = Writer::new(
-                &write_to, Some(Header::from_nifti(&header))).unwrap();
+            let mut writer = Writer::new(&write_to, Some(Header::from_nifti(&header))).unwrap();
             writer.apply_affine(&raw_affine_from_nifti(&header));
-            writer.write(&[
-                Point::new(13.75, 27.90, 51.55),
-                Point::new(14.00, 27.95, 51.98),
-                Point::new(14.35, 28.05, 52.33)][..]);
+            writer.write(
+                &[
+                    Point::new(13.75, 27.90, 51.55),
+                    Point::new(14.00, 27.95, 51.98),
+                    Point::new(14.35, 28.05, 52.33),
+                ][..],
+            );
         }
 
         // Loading them back without the right transformation is not supposed to give back the same
@@ -40,15 +42,17 @@ mod nifti_tests {
 
     #[test]
     fn test_qform_affine() {
-        let header = InMemNiftiObject::from_file(
-            "data/qform.nii.gz").unwrap().header().clone();
+        let header = InMemNiftiObject::from_file("data/qform.nii.gz").unwrap().header().clone();
         let affine = raw_affine_from_nifti(&header);
-        assert_eq!(affine, Affine4::new(
-            -0.9375, 0.0,    0.0, 59.557503,
-             0.0,    0.9375, 0.0, 73.172,
-             0.0,    0.0,    3.0, 43.4291,
-             0.0,    0.0,    0.0, 1.0
-        ));
+        assert_eq!(
+            affine,
+            Affine4::new(
+                -0.9375, 0.0, 0.0, 59.557503,
+                0.0, 0.9375, 0.0, 73.172,
+                0.0, 0.0, 3.0, 43.4291,
+                0.0, 0.0, 0.0, 1.0,
+            )
+        );
     }
 
     #[test]
@@ -58,41 +62,55 @@ mod nifti_tests {
             [3.0, 1.1, 1.2, 1.3, 0.0, 0.0, 0.0, 0.0],
             [1.1, 0.0, 0.0, 10.0],
             [0.0, 1.2, 0.0, 11.0],
-            [0.0, 0.0, 1.3, 12.0]
+            [0.0, 0.0, 1.3, 12.0],
         );
         assert_eq!(c_header.dim, [100, 100, 100]);
         assert_eq!(c_header.voxel_size, [1.1, 1.2, 1.3]);
-        assert_eq!(c_header.vox_to_ras, [1.1, 0.0, 0.0, 10.0,
-                                         0.0, 1.2, 0.0, 11.0,
-                                         0.0, 0.0, 1.3, 12.0,
-                                         0.0, 0.0, 0.0, 1.0]);
+        assert_eq!(
+            c_header.vox_to_ras,
+            [
+                1.1, 0.0, 0.0, 10.0,
+                0.0, 1.2, 0.0, 11.0,
+                0.0, 0.0, 1.3, 12.0,
+                0.0, 0.0, 0.0, 1.0,
+            ]
+        );
         assert_eq!(c_header.voxel_order, *b"RAS\0");
     }
 
     #[test]
     fn test_complex_header_from_nifti() {
-        let nifti_header = InMemNiftiObject::from_file("data/3x3.nii.gz")
-            .unwrap().header().clone();
+        let nifti_header = InMemNiftiObject::from_file("data/3x3.nii.gz").unwrap().header().clone();
 
         let c_header = CHeader::from_nifti(
             nifti_header.dim,
             nifti_header.pixdim,
             nifti_header.srow_x,
             nifti_header.srow_y,
-            nifti_header.srow_z);
+            nifti_header.srow_z,
+        );
         assert_eq!(c_header.dim, [3, 3, 3]);
         assert_eq!(c_header.voxel_size, [2.0, 2.0, 2.0]);
-        assert_eq!(c_header.vox_to_ras, [-2.0, 0.0, 0.0, 90.0,
-                                          0.0, 2.0, 0.0, -126.0,
-                                          0.0, 0.0, 2.0, -72.0,
-                                          0.0, 0.0, 0.0, 1.0]);
+        assert_eq!(
+            c_header.vox_to_ras,
+            [
+                -2.0, 0.0, 0.0, 90.0,
+                0.0, 2.0, 0.0, -126.0,
+                0.0, 0.0, 2.0, -72.0,
+                0.0, 0.0, 0.0, 1.0,
+            ]
+        );
         assert_eq!(c_header.voxel_order, *b"LAS\0");
 
         let header = Header::from_nifti(&nifti_header);
-        assert_eq!(header.affine_to_rasmm, Affine::new(
-            -1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0));
+        assert_eq!(
+            header.affine_to_rasmm,
+            Affine::new(
+                -1.0, 0.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, 0.0, 1.0,
+            )
+        );
         assert_eq!(header.translation, Translation::new(91.0, -127.0, -73.0));
         assert_eq!(header.nb_streamlines, 0);
         assert_eq!(header.scalars_name.len(), 0);
@@ -101,17 +119,24 @@ mod nifti_tests {
 
     #[test]
     fn test_complex_affine_from_nifti() {
-        let nifti_header = InMemNiftiObject::from_file("data/3x3.nii.gz")
-            .unwrap().header().clone();
-        assert_eq!(trackvis_to_rasmm(&nifti_header), Affine4::new(
-            -1.0, 0.0, 0.0, 91.0,
-             0.0, 1.0, 0.0, -127.0,
-             0.0, 0.0, 1.0, -73.0,
-             0.0, 0.0, 0.0, 1.0));
-        assert_eq!(rasmm_to_trackvis(&nifti_header), Affine4::new(
-            -1.0, 0.0, 0.0, 91.0,
-             0.0, 1.0, 0.0, 127.0,
-             0.0, 0.0, 1.0, 73.0,
-             0.0, 0.0, 0.0, 1.0));
+        let nifti_header = InMemNiftiObject::from_file("data/3x3.nii.gz").unwrap().header().clone();
+        assert_eq!(
+            trackvis_to_rasmm(&nifti_header),
+            Affine4::new(
+                -1.0, 0.0, 0.0, 91.0,
+                0.0, 1.0, 0.0, -127.0,
+                0.0, 0.0, 1.0, -73.0,
+                0.0, 0.0, 0.0, 1.0,
+            )
+        );
+        assert_eq!(
+            rasmm_to_trackvis(&nifti_header),
+            Affine4::new(
+                -1.0, 0.0, 0.0, 91.0,
+                0.0, 1.0, 0.0, 127.0,
+                0.0, 0.0, 1.0, 73.0,
+                0.0, 0.0, 0.0, 1.0,
+            )
+        );
     }
 }

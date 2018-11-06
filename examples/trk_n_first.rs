@@ -28,8 +28,8 @@ Options:
 fn main() {
     let version = String::from(env!("CARGO_PKG_VERSION"));
     let args = Docopt::new(USAGE)
-                      .and_then(|dopt| dopt.version(Some(version)).parse())
-                      .unwrap_or_else(|e| e.exit());
+        .and_then(|dopt| dopt.version(Some(version)).parse())
+        .unwrap_or_else(|e| e.exit());
 
     let input = Path::new(args.get_str("<input>"));
     if !input.exists() {
@@ -59,7 +59,9 @@ fn main() {
             streamline.iter().for_each(&print)
         }
 
-        if i == nb { break; }
+        if i == nb {
+            break;
+        }
         println!("");
     }
 }

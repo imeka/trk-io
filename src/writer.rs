@@ -4,9 +4,9 @@ use std::path::Path;
 
 use byteorder::WriteBytesExt;
 
+use affine::get_affine_and_translation;
 use tractogram::{Point, RefTractogramItem, Tractogram, TractogramItem};
 use {Affine, Affine4, CHeader, Header, Translation, TrkEndianness};
-use affine::get_affine_and_translation;
 
 macro_rules! write_streamline {
     ($writer:ident, $streamline:expr, $scalars:expr, $properties:expr) => {
@@ -32,7 +32,7 @@ macro_rules! write_streamline {
             $writer.write_point(&p);
         }
         $writer.real_n_count += 1;
-    }
+    };
 }
 
 pub struct Writer {
@@ -41,7 +41,7 @@ pub struct Writer {
     affine: Affine,
     translation: Translation,
     real_n_count: i32,
-    nb_scalars: usize
+    nb_scalars: usize,
 }
 
 pub trait Writable {
@@ -77,23 +77,20 @@ impl<'data> Writable for &'data [Point] {
 }
 
 impl Writer {
-    pub fn new<P: AsRef<Path>>(
-        path: P,
-        reference: Option<Header>
-    ) -> Result<Writer> {
+    pub fn new<P: AsRef<Path>>(path: P, reference: Option<Header>) -> Result<Writer> {
         let f = File::create(path).expect("Can't create new trk file.");
         let mut writer = BufWriter::new(f);
 
         let header = match reference {
             Some(r) => r,
-            None => Header::default()
+            None => Header::default(),
         };
         header.write(&mut writer)?;
         let nb_scalars = header.scalars_name.len();
 
         // We are only interested in the inversed affine
-        let affine4 = header.affine4_to_rasmm.try_inverse().expect(
-            "Unable to inverse 4x4 affine matrix");
+        let affine4 =
+            header.affine4_to_rasmm.try_inverse().expect("Unable to inverse 4x4 affine matrix");
         let (affine, translation) = get_affine_and_translation(&affine4);
 
         Ok(Writer { writer, affine4, affine, translation, real_n_count: 0, nb_scalars })
@@ -111,7 +108,8 @@ impl Writer {
     }
 
     pub fn write_from_iter<I>(&mut self, streamline: I, len: usize)
-        where I: IntoIterator<Item = Point>
+    where
+        I: IntoIterator<Item = Point>,
     {
         write_streamline!(self, streamline, len);
     }
@@ -133,9 +131,10 @@ impl Writer {
 // Finally write `n_count`
 impl Drop for Writer {
     fn drop(&mut self) {
-        CHeader::seek_n_count_field(&mut self.writer).expect(
-            "Unable to seek to 'n_count' field before closing trk file.");
-        self.writer.write_i32::<TrkEndianness>(self.real_n_count).expect(
-            "Unable to write 'n_count' field before closing trk file.");
+        CHeader::seek_n_count_field(&mut self.writer)
+            .expect("Unable to seek to 'n_count' field before closing trk file.");
+        self.writer
+            .write_i32::<TrkEndianness>(self.real_n_count)
+            .expect("Unable to write 'n_count' field before closing trk file.");
     }
 }

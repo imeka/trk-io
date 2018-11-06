@@ -1,4 +1,4 @@
-use nalgebra::{Matrix3, Matrix4, Quaternion, RowVector4, SymmetricEigen, U1, Vector3};
+use nalgebra::{Matrix3, Matrix4, Quaternion, RowVector4, SymmetricEigen, Vector3, U1};
 use nifti::NiftiHeader;
 
 use affine::get_affine_and_translation;
@@ -14,10 +14,12 @@ pub fn raw_affine_from_nifti(h: &NiftiHeader) -> Affine4 {
 }
 
 pub fn get_sform(h: &NiftiHeader) -> Affine4 {
-    Affine4::new(h.srow_x[0], h.srow_x[1], h.srow_x[2], h.srow_x[3],
-                 h.srow_y[0], h.srow_y[1], h.srow_y[2], h.srow_y[3],
-                 h.srow_z[0], h.srow_z[1], h.srow_z[2], h.srow_z[3],
-                 0.0, 0.0, 0.0, 1.0)
+    Affine4::new(
+        h.srow_x[0], h.srow_x[1], h.srow_x[2], h.srow_x[3],
+        h.srow_y[0], h.srow_y[1], h.srow_y[2], h.srow_y[3],
+        h.srow_z[0], h.srow_z[1], h.srow_z[2], h.srow_z[3],
+        0.0, 0.0, 0.0, 1.0,
+    )
 }
 
 /// Return 4x4 affine matrix from qform parameters in header
@@ -34,13 +36,15 @@ pub fn get_qform(h: &NiftiHeader) -> Affine4 {
     let s = Matrix3::from_diagonal(&Vector3::new(
         h.pixdim[1] as f64,
         h.pixdim[2] as f64,
-        (h.pixdim[3] * h.pixdim[0]) as f64));
+        (h.pixdim[3] * h.pixdim[0]) as f64,
+    ));
     let m = r * s;
     Affine4::new(
         m[0] as f32, m[3] as f32, m[6] as f32, h.quatern_x,
         m[1] as f32, m[4] as f32, m[7] as f32, h.quatern_y,
         m[2] as f32, m[5] as f32, m[8] as f32, h.quatern_z,
-        0.0, 0.0, 0.0, 1.0)
+        0.0, 0.0, 0.0, 1.0,
+    )
 }
 
 pub fn set_affine(header: &mut NiftiHeader, affine4: &Matrix4<f64>) {
@@ -80,11 +84,13 @@ pub fn set_qform(header: &mut NiftiHeader, affine4: &Matrix4<f64>, code: usize) 
     let spacing = (
         (aff2[0] + aff2[1] + aff2[2]).sqrt(),
         (aff2[3] + aff2[4] + aff2[5]).sqrt(),
-        (aff2[6] + aff2[7] + aff2[8]).sqrt());
+        (aff2[6] + aff2[7] + aff2[8]).sqrt(),
+    );
     let mut r = Matrix3::<f64>::new(
         affine[0] / spacing.0, affine[3] / spacing.1, affine[6] / spacing.2,
         affine[1] / spacing.0, affine[4] / spacing.1, affine[7] / spacing.2,
-        affine[2] / spacing.0, affine[5] / spacing.1, affine[8] / spacing.2);
+        affine[2] / spacing.0, affine[5] / spacing.1, affine[8] / spacing.2,
+    );
 
     // Set qfac to make R determinant positive
     let qfac = if r.determinant() > 0.0 {
@@ -122,7 +128,8 @@ pub fn set_qform(header: &mut NiftiHeader, affine4: &Matrix4<f64>, code: usize) 
 pub fn get_qform_quaternion(h: &NiftiHeader) -> Quaternion<f64> {
     fill_positive(
         Vector3::new(h.quatern_b as f64, h.quatern_c as f64, h.quatern_d as f64),
-        Some(-3.5762786865234375e-07)) // TODO self.quaternion_threshold
+        Some(-3.5762786865234375e-07),
+    ) // TODO self.quaternion_threshold
 }
 
 /// Compute unit quaternion from last 3 values
@@ -137,11 +144,8 @@ pub fn get_qform_quaternion(h: &NiftiHeader) -> Quaternion<f64> {
 /// w2 = 1.0-(x*x+y*y+z*z) can be near zero, which will lead to numerical instability in sqrt.
 /// Here we use the system maximum float type to reduce numerical instability.
 pub fn fill_positive(xyz: Vector3<f64>, w2_thresh: Option<f64>) -> Quaternion<f64> {
-    let w2_thresh = if let Some(w2_thresh) = w2_thresh {
-        w2_thresh
-    } else {
-        ::std::f64::EPSILON * 3.0
-    };
+    let w2_thresh =
+        if let Some(w2_thresh) = w2_thresh { w2_thresh } else { ::std::f64::EPSILON * 3.0 };
     let w2 = 1.0 - xyz.dot(&xyz);
     let w = if w2 < 0.0 {
         if w2 < w2_thresh {
@@ -168,26 +172,36 @@ pub fn fill_positive(xyz: Vector3<f64>, w2_thresh: Option<f64>) -> Quaternion<f6
 pub fn affine_to_quaternion(affine: &Matrix3<f64>) -> RowVector4<f64> {
     // Qyx refers to the contribution of the y input vector component to the x output vector
     // component. Qyx is therefore the same as M[0,1]. The notation is from the Wikipedia article.
-    let qxx = affine[0]; let qyx = affine[3]; let qzx = affine[6];
-    let qxy = affine[1]; let qyy = affine[4]; let qzy = affine[7];
-    let qxz = affine[2]; let qyz = affine[5]; let qzz = affine[8];
+    let qxx = affine[0];
+    let qyx = affine[3];
+    let qzx = affine[6];
+    let qxy = affine[1];
+    let qyy = affine[4];
+    let qzy = affine[7];
+    let qxz = affine[2];
+    let qyz = affine[5];
+    let qzz = affine[8];
 
     // Fill only lower half of symmetric matrix
     let k = Matrix4::new(
         qxx - qyy - qzz, 0.0,             0.0,             0.0,
         qyx + qxy,       qyy - qxx - qzz, 0.0,             0.0,
         qzx + qxz,       qzy + qyz,       qzz - qxx - qyy, 0.0,
-        qyz - qzy,       qzx - qxz,       qxy - qyx,       qxx + qyy + qzz);
+        qyz - qzy,       qzx - qxz,       qxy - qyx,       qxx + qyy + qzz,
+    );
 
     // Use Hermitian eigenvectors, values for speed
-    let SymmetricEigen {eigenvalues: values, eigenvectors: vectors} = k.symmetric_eigen();
+    let SymmetricEigen { eigenvalues: values, eigenvectors: vectors } = k.symmetric_eigen();
 
     // Select largest eigenvector, reorder to w,x,y,z quaternion
-    let (max_idx, _) = values.as_slice().iter().enumerate().max_by(
-        |(_, a), (_, b)| a.partial_cmp(b).unwrap()).unwrap();
+    let (max_idx, _) = values
+        .as_slice()
+        .iter()
+        .enumerate()
+        .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+        .unwrap();
     let max_vector = vectors.fixed_columns::<U1>(max_idx);
-    let quaternion = RowVector4::new(
-        max_vector[3], max_vector[0], max_vector[1], max_vector[2]);
+    let quaternion = RowVector4::new(max_vector[3], max_vector[0], max_vector[1], max_vector[2]);
 
     // Prefer quaternion with positive w
     // (q * -1 corresponds to same rotation as q)
@@ -225,12 +239,12 @@ fn quaternion_to_affine(q: Quaternion<f64>) -> Matrix3<f64> {
     Matrix3::new(
         1.0 - (yy + zz), xy - wz, xz + wy,
         xy + wz, 1.0 - (xx + zz), yz - wx,
-        xz - wy, yz + wx, 1.0 - (xx + yy))
+        xz - wy, yz + wx, 1.0 - (xx + yy),
+    )
 }
 
 #[cfg(test)]
-mod tests
-{
+mod tests {
     use super::*;
 
     #[test]
@@ -251,12 +265,16 @@ mod tests
         let affine = Matrix3::from_diagonal(&Vector3::new(1.0, -1.0, -1.0));
         assert_eq!(affine_to_quaternion(&affine), RowVector4::new(0.0, 1.0, 0.0, 0.0));
 
-        let affine = Matrix3::new(
-            1.1, 0.1, 0.1,
-            0.2, 1.1, 0.5,
-            0.0, 0.0, 1.0);
-        assert_eq!(affine_to_quaternion(&affine), RowVector4::new(
-            0.9929998817020886, -0.1147422705153119, 0.017766153114299042, 0.02167510323267157));
+        let affine = Matrix3::new(1.1, 0.1, 0.1, 0.2, 1.1, 0.5, 0.0, 0.0, 1.0);
+        assert_eq!(
+            affine_to_quaternion(&affine),
+            RowVector4::new(
+                0.9929998817020886,
+                -0.1147422705153119,
+                0.017766153114299042,
+                0.02167510323267157
+            )
+        );
     }
 
     #[test]
@@ -267,8 +285,6 @@ mod tests
 
         // 180 degree rotation around axis 0
         let affine = quaternion_to_affine(Quaternion::new(0.0, 1.0, 0.0, 0.0));
-        assert_eq!(affine, Matrix3::new(1.0, 0.0, 0.0,
-                                        0.0, -1.0, 0.0,
-                                        0.0, 0.0, -1.0));
+        assert_eq!(affine, Matrix3::new(1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0));
     }
 }

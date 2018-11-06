@@ -4,20 +4,25 @@ use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Result, Seek, SeekFr
 use std::str::from_utf8;
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt};
-use nalgebra::{U3, Vector4};
+use nalgebra::{Vector4, U3};
 
-#[cfg(feature = "use_nifti")] use Affine;
+use orientation::{
+    affine_to_axcodes, axcodes_to_orientations, inverse_orientations_affine, orientations_transform,
+};
+#[cfg(feature = "use_nifti")]
+use Affine;
 use {Affine4, TrkEndianness};
-use orientation::{affine_to_axcodes, axcodes_to_orientations,
-                  inverse_orientations_affine, orientations_transform};
 
-pub enum Endianness { Little, Big }
+pub enum Endianness {
+    Little,
+    Big,
+}
 
 impl fmt::Display for Endianness {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Endianness::Little => write!(f, "< (Little)"),
-            Endianness::Big => write!(f, "> (Big)")
+            Endianness::Big => write!(f, "> (Big)"),
         }
     }
 }
@@ -31,10 +36,10 @@ pub struct CHeader {
     pub voxel_size: [f32; 3],
     pub origin: [f32; 3],
     pub n_scalars: i16,
-    pub scalar_name: [u8; 200],    // [10][20]
+    pub scalar_name: [u8; 200],   // [10][20]
     pub n_properties: i16,
-    pub property_name: [u8; 200],  // [10][20]
-    pub vox_to_ras: [f32; 16],     // [4][4]
+    pub property_name: [u8; 200], // [10][20]
+    pub vox_to_ras: [f32; 16],    // [4][4]
     pub reserved: [u8; 444],
     pub voxel_order: [u8; 4],
     pub pad2: [u8; 4],
@@ -48,7 +53,7 @@ pub struct CHeader {
     pub swap_z: u8,
     pub n_count: i32,
     pub version: i32,
-    pub hdr_size: i32
+    pub hdr_size: i32,
 }
 
 // TODO Use size_of::<Header>() when possible
@@ -62,19 +67,23 @@ impl CHeader {
         pixdim: [f32; 8],
         srow_x: [f32; 4],
         srow_y: [f32; 4],
-        srow_z: [f32; 4]
+        srow_z: [f32; 4],
     ) -> CHeader {
-        let affine = Affine::new(srow_x[0], srow_x[1], srow_x[2],
-                                 srow_y[0], srow_y[1], srow_y[2],
-                                 srow_z[0], srow_z[1], srow_z[2]);
+        let affine = Affine::new(
+            srow_x[0], srow_x[1], srow_x[2],
+            srow_y[0], srow_y[1], srow_y[2],
+            srow_z[0], srow_z[1], srow_z[2],
+        );
         let vo = affine_to_axcodes(&affine).into_bytes();
         CHeader {
             dim: [dim[1] as i16, dim[2] as i16, dim[3] as i16],
             voxel_size: [pixdim[1], pixdim[2], pixdim[3]],
-            vox_to_ras: [srow_x[0], srow_x[1], srow_x[2], srow_x[3],
-                         srow_y[0], srow_y[1], srow_y[2], srow_y[3],
-                         srow_z[0], srow_z[1], srow_z[2], srow_z[3],
-                         0.0, 0.0, 0.0, 1.0],
+            vox_to_ras: [
+                srow_x[0], srow_x[1], srow_x[2], srow_x[3],
+                srow_y[0], srow_y[1], srow_y[2], srow_y[3],
+                srow_z[0], srow_z[1], srow_z[2], srow_z[3],
+                0.0, 0.0, 0.0, 1.0,
+            ],
             voxel_order: [vo[0], vo[1], vo[2], 0u8],
             ..CHeader::default()
         }
@@ -97,7 +106,7 @@ impl CHeader {
             let pos = 20 * self.n_scalars as usize;
             self.scalar_name[pos..pos + name.len()].clone_from_slice(name.as_bytes());
             self.n_scalars += 1;
-            return Ok(())
+            return Ok(());
         }
     }
 
@@ -123,23 +132,23 @@ impl CHeader {
             1.0 / self.voxel_size[0],
             1.0 / self.voxel_size[1],
             1.0 / self.voxel_size[2],
-            1.0));
+            1.0,
+        ));
         affine = scale * affine;
 
         let offset = Affine4::new(
             1.0, 0.0, 0.0, -0.5,
             0.0, 1.0, 0.0, -0.5,
             0.0, 0.0, 1.0, -0.5,
-            0.0, 0.0, 0.0, 1.0);
+            0.0, 0.0, 0.0, 1.0,
+        );
         affine = offset * affine;
 
-        let voxel_to_rasmm = Affine4::from_iterator(
-            self.vox_to_ras.iter().cloned()).transpose();
+        let voxel_to_rasmm = Affine4::from_iterator(self.vox_to_ras.iter().cloned()).transpose();
 
-        let header_ornt = axcodes_to_orientations(
-            from_utf8(&self.voxel_order).unwrap());
-        let affine_order = affine_to_axcodes(
-            &voxel_to_rasmm.fixed_slice::<U3, U3>(0, 0).into_owned());
+        let header_ornt = axcodes_to_orientations(from_utf8(&self.voxel_order).unwrap());
+        let affine_order =
+            affine_to_axcodes(&voxel_to_rasmm.fixed_slice::<U3, U3>(0, 0).into_owned());
         let affine_ornt = axcodes_to_orientations(&affine_order);
         let orientations = orientations_transform(&header_ornt, &affine_ornt);
         let inv = inverse_orientations_affine(&orientations, self.dim);
@@ -159,7 +168,7 @@ impl CHeader {
         let endianness = test_endianness(reader)?;
         let header = match endianness {
             Endianness::Little => CHeader::read_::<LittleEndian>(reader)?,
-            Endianness::Big => CHeader::read_::<BigEndian>(reader)?
+            Endianness::Big => CHeader::read_::<BigEndian>(reader)?,
         };
         Ok((header, endianness))
     }
@@ -245,7 +254,7 @@ impl CHeader {
 
 impl Default for CHeader {
     fn default() -> CHeader {
-         CHeader {
+        CHeader {
             id_string: *b"TRACK\0",
             dim: [0, 0, 0],
             voxel_size: [1.0, 1.0, 1.0],
@@ -254,20 +263,23 @@ impl Default for CHeader {
             scalar_name: [0; 200],
             n_properties: 0,
             property_name: [0; 200],
-            vox_to_ras: [1.0, 0.0, 0.0, 0.0,
-                         0.0, 1.0, 0.0, 0.0,
-                         0.0, 0.0, 1.0, 0.0,
-                         0.0, 0.0, 0.0, 1.0],
+            vox_to_ras: [
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+            ],
             reserved: [0; 444],
             voxel_order: [82, 65, 83, 0],
             pad2: [0; 4],
             image_orientation_patient: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             pad1: [0; 2],
-            invert_x: 0, invert_y: 0, invert_z: 0,
-            swap_x: 0, swap_y: 0, swap_z: 0,
+            invert_x: 0,
+            invert_y: 0,
+            invert_z: 0,
+            swap_x: 0,
+            swap_y: 0,
+            swap_z: 0,
             n_count: 0,
             version: 2,
-            hdr_size: HEADER_SIZE as i32
+            hdr_size: HEADER_SIZE as i32,
         }
     }
 }
@@ -283,11 +295,7 @@ fn test_endianness(reader: &mut BufReader<File>) -> Result<Endianness> {
     let version_offset = (HEADER_SIZE - 8) as u64;
     reader.seek(SeekFrom::Start(version_offset))?;
     let version = reader.read_i32::<LittleEndian>()?;
-    let endianness = if version <= 255 {
-        Endianness::Little
-    } else {
-        Endianness::Big
-    };
+    let endianness = if version <= 255 { Endianness::Little } else { Endianness::Big };
     reader.seek(SeekFrom::Start(0))?;
 
     Ok(endianness)
@@ -300,7 +308,9 @@ fn test_endianness(reader: &mut BufReader<File>) -> Result<Endianness> {
 fn read_names(names_bytes: &[u8], nb: usize) -> Vec<String> {
     let mut names = Vec::with_capacity(nb);
     for names_byte in names_bytes.chunks(20) {
-        if names_byte[0] == 0u8 { break; }
+        if names_byte[0] == 0u8 {
+            break;
+        }
 
         let idx = names_byte.iter().position(|&e| e == 0u8).unwrap_or(20);
         let name = from_utf8(&names_byte[..idx]).unwrap().to_string();

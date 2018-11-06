@@ -9,24 +9,20 @@ pub type Points = Vec<Point>;
 pub type Streamlines = ArraySequence<Point>;
 
 pub type TractogramItem = (Points, ArraySequence<f32>, Vec<f32>);
-pub type RefTractogramItem<'data> = (
-    &'data[Point],
-    &'data[f32],
-    &'data[f32]
-);
+pub type RefTractogramItem<'data> = (&'data [Point], &'data [f32], &'data [f32]);
 
 #[derive(Clone, PartialEq)]
 pub struct Tractogram {
     pub streamlines: Streamlines,
     pub scalars: ArraySequence<f32>,
-    pub properties: ArraySequence<f32>
+    pub properties: ArraySequence<f32>,
 }
 
 impl Tractogram {
     pub fn new(
         streamlines: Streamlines,
         scalars: ArraySequence<f32>,
-        properties: ArraySequence<f32>
+        properties: ArraySequence<f32>,
     ) -> Tractogram {
         Tractogram { streamlines, scalars, properties }
     }
@@ -45,16 +41,13 @@ impl<'data> IntoIterator for &'data Tractogram {
     type IntoIter = TractogramIterator<'data>;
 
     fn into_iter(self) -> Self::IntoIter {
-        TractogramIterator {
-            tractogram: self,
-            index: 0..self.streamlines.len()
-        }
+        TractogramIterator { tractogram: self, index: 0..self.streamlines.len() }
     }
 }
 
 pub struct TractogramIterator<'data> {
     tractogram: &'data Tractogram,
-    index: Range<usize>
+    index: Range<usize>,
 }
 
 impl<'data> Iterator for TractogramIterator<'data> {

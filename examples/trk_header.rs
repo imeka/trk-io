@@ -27,8 +27,8 @@ Options:
 fn main() {
     let version = String::from(env!("CARGO_PKG_VERSION"));
     let args = Docopt::new(USAGE)
-                      .and_then(|dopt| dopt.version(Some(version)).parse())
-                      .unwrap_or_else(|e| e.exit());
+        .and_then(|dopt| dopt.version(Some(version)).parse())
+        .unwrap_or_else(|e| e.exit());
     let print_all = args.get_bool("--all");
     let input = Path::new(args.get_str("<input>"));
     if !input.exists() {
@@ -37,15 +37,12 @@ fn main() {
 
     let f = File::open(args.get_str("<input>")).expect("Can't read trk file.");
     let mut reader = BufReader::new(f);
-    let (header, endianness) = CHeader::read(&mut reader)
-        .expect("Read header");
+    let (header, endianness) = CHeader::read(&mut reader).expect("Read header");
 
     if print_all {
         println!("---------- Actual fields ----------");
     }
-    println!("id_string: {:?} ({})",
-        header.id_string,
-        str::from_utf8(&header.id_string).unwrap());
+    println!("id_string: {:?} ({})", header.id_string, str::from_utf8(&header.id_string).unwrap());
     println!("dim: {:?}", header.dim);
     println!("voxel_size: {:?}", header.voxel_size);
     println!("origin: {:?}", header.origin);
@@ -61,15 +58,14 @@ fn main() {
     println!("            {:?}", &header.vox_to_ras[4..8]);
     println!("            {:?}", &header.vox_to_ras[8..12]);
     println!("            {:?}", &header.vox_to_ras[12..16]);
-    println!("voxel_order: {:?} ({})",
+    println!(
+        "voxel_order: {:?} ({})",
         header.voxel_order,
-        str::from_utf8(&header.voxel_order).unwrap());
-    println!("image_orientation_patient: {:?}",
-        header.image_orientation_patient);
-    println!("invert: {:?} {:?} {:?}",
-        header.invert_x, header.invert_y, header.invert_z);
-    println!("swap: {:?} {:?} {:?}",
-        header.swap_x, header.swap_y, header.swap_z);
+        str::from_utf8(&header.voxel_order).unwrap()
+    );
+    println!("image_orientation_patient: {:?}", header.image_orientation_patient);
+    println!("invert: {:?} {:?} {:?}", header.invert_x, header.invert_y, header.invert_z);
+    println!("swap: {:?} {:?} {:?}", header.swap_x, header.swap_y, header.swap_z);
     println!("n_count: {:?}", header.n_count);
     println!("version: {:?}", header.version);
     println!("hdr_size: {:?}", header.hdr_size);

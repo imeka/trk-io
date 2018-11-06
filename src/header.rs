@@ -2,11 +2,12 @@ use std::fs::File;
 use std::io::{BufReader, Result};
 
 use byteorder::WriteBytesExt;
-#[cfg(feature = "use_nifti")] use nifti::NiftiHeader;
+#[cfg(feature = "use_nifti")]
+use nifti::NiftiHeader;
 
-use {Affine, Affine4, Translation};
 use affine::get_affine_and_translation;
 use cheader::{CHeader, Endianness};
+use {Affine, Affine4, Translation};
 
 #[derive(Clone)]
 pub struct Header {
@@ -17,14 +18,13 @@ pub struct Header {
     pub nb_streamlines: usize,
 
     pub scalars_name: Vec<String>,
-    pub properties_name: Vec<String>
+    pub properties_name: Vec<String>,
 }
 
 impl Header {
     #[cfg(feature = "use_nifti")]
     pub fn from_nifti(h: &NiftiHeader) -> Header {
-        let c_header = CHeader::from_nifti(
-            h.dim, h.pixdim, h.srow_x, h.srow_y, h.srow_z);
+        let c_header = CHeader::from_nifti(h.dim, h.pixdim, h.srow_x, h.srow_y, h.srow_z);
         let affine4 = c_header.get_affine_to_rasmm();
         let (affine, translation) = get_affine_and_translation(&affine4);
         Header {
@@ -33,7 +33,8 @@ impl Header {
             affine_to_rasmm: affine,
             translation,
             nb_streamlines: 0,
-            scalars_name: vec![], properties_name: vec![]
+            scalars_name: vec![],
+            properties_name: vec![],
         }
     }
 
@@ -58,7 +59,7 @@ impl Header {
             translation,
             nb_streamlines,
             scalars_name,
-            properties_name
+            properties_name,
         };
         Ok((header, endianness))
     }
@@ -77,17 +78,17 @@ impl Default for Header {
             translation: Translation::zeros(),
             nb_streamlines: 0,
             scalars_name: vec![],
-            properties_name: vec![]
+            properties_name: vec![],
         }
     }
 }
 
 impl PartialEq for Header {
     fn eq(&self, other: &Header) -> bool {
-        self.affine_to_rasmm == other.affine_to_rasmm &&
-        self.translation == other.translation &&
-        self.nb_streamlines == other.nb_streamlines &&
-        self.scalars_name == other.scalars_name &&
-        self.properties_name == other.properties_name
+        self.affine_to_rasmm == other.affine_to_rasmm
+            && self.translation == other.translation
+            && self.nb_streamlines == other.nb_streamlines
+            && self.scalars_name == other.scalars_name
+            && self.properties_name == other.properties_name
     }
 }

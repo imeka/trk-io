@@ -5,8 +5,8 @@ mod test;
 
 use std::iter::FromIterator;
 
-use trk_io::{Affine4, Point, Reader, Writer};
 use test::{get_random_trk_path, load_trk};
+use trk_io::{Affine4, Point, Reader, Writer};
 
 // write(Tractogram) is tested in write_empty and write_simple.
 // write(TractogramItem) is tested in test_write_tractogram_item_simple and write_complex.
@@ -22,16 +22,14 @@ fn test_write_dynamic() {
     // This seemingly useless { scope } is *required* because Writer::drop must be called
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
-        writer.write_from_iter(
-            [Point::new(0.0, 1.0, 2.0)].iter().cloned(), 1);
+        writer.write_from_iter([Point::new(0.0, 1.0, 2.0)].iter().cloned(), 1);
 
         let v = vec![Point::new(0.0, 1.0, 2.0), Point::new(3.0, 4.0, 5.0)];
         writer.write_from_iter(v, 2);
 
         let v = Vec::from_iter(0..15);
-        let iter = v.chunks(3).map(
-            |ints| Point::new(ints[0] as f32, ints[1] as f32, ints[2] as f32)
-        );
+        let iter =
+            v.chunks(3).map(|ints| Point::new(ints[0] as f32, ints[1] as f32, ints[2] as f32));
         writer.write_from_iter(iter, 5);
     }
 
@@ -101,8 +99,7 @@ fn test_write_ref_tractogram_item_simple() {
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
     {
-        let mut writer = Writer::new(
-            &write_to, Some(original_header.clone())).unwrap();
+        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
         for ref_item in original_tractogram.into_iter() {
             writer.write(ref_item);
         }
@@ -125,9 +122,10 @@ fn test_write_standard() {
 
     let (header, tractogram) = load_trk(&write_to);
     assert_eq!(header.nb_streamlines, 3);
-    assert_eq!(tractogram.streamlines[0], [Point::new(-0.5, -1.5, 1.0),
-                                           Point::new(0.0, 0.0, 2.0),
-                                           Point::new(0.5, 1.5, 3.0)]);
+    assert_eq!(
+        tractogram.streamlines[0],
+        [Point::new(-0.5, -1.5, 1.0), Point::new(0.0, 0.0, 2.0), Point::new(0.5, 1.5, 3.0)]
+    );
 }
 
 #[test]
@@ -137,10 +135,15 @@ fn test_write_standard_lps() {
 
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
-        assert_eq!(writer.affine4, Affine4::new(-1.0, 0.0, 0.0, 3.5,
-                                                0.0, -1.0, 0.0, 13.5,
-                                                0.0, 0.0, 1.0, 1.0,
-                                                0.0, 0.0, 0.0, 1.0));
+        assert_eq!(
+            writer.affine4,
+            Affine4::new(
+                -1.0, 0.0, 0.0, 3.5,
+                0.0, -1.0, 0.0, 13.5,
+                0.0, 0.0, 1.0, 1.0,
+                0.0, 0.0, 0.0, 1.0,
+            )
+        );
         for i in 0..10 {
             writer.write(&original_tractogram.streamlines[i]);
         }
@@ -148,14 +151,19 @@ fn test_write_standard_lps() {
 
     let (header, tractogram) = load_trk(&write_to);
     assert_eq!(header.nb_streamlines, 10);
-    assert_eq!(header.affine4_to_rasmm, Affine4::new(
-        -1.0, 0.0, 0.0, 3.5,
-        0.0, -1.0, 0.0, 13.5,
-        0.0, 0.0, 1.0, -1.0,
-        0.0, 0.0, 0.0, 1.0));
-    assert_eq!(tractogram.streamlines[0], [Point::new(-0.5, -1.5, 1.0),
-                                           Point::new(0.0, 0.0, 2.0),
-                                           Point::new(0.5, 1.5, 3.0)]);
+    assert_eq!(
+        header.affine4_to_rasmm,
+        Affine4::new(
+            -1.0, 0.0, 0.0, 3.5,
+            0.0, -1.0, 0.0, 13.5,
+            0.0, 0.0, 1.0, -1.0,
+            0.0, 0.0, 0.0, 1.0,
+        )
+    );
+    assert_eq!(
+        tractogram.streamlines[0],
+        [Point::new(-0.5, -1.5, 1.0), Point::new(0.0, 0.0, 2.0), Point::new(0.5, 1.5, 3.0)]
+    );
 }
 
 #[test]

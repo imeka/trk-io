@@ -14,16 +14,13 @@ impl<'a, T> IntoIterator for &'a ArraySequence<T> {
     type IntoIter = ArraySequenceIterator<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        ArraySequenceIterator {
-            arr: self,
-            index: 0..self.len()
-        }
+        ArraySequenceIterator { arr: self, index: 0..self.len() }
     }
 }
 
 pub struct ArraySequenceIterator<'a, T: 'a> {
     arr: &'a ArraySequence<T>,
-    index: Range<usize>
+    index: Range<usize>,
 }
 
 impl<'a, T> Iterator for ArraySequenceIterator<'a, T> {
@@ -99,24 +96,26 @@ impl<T> ArraySequence<T> {
         ArraySequence { offsets: vec![0], data: Vec::with_capacity(n) }
     }
 
-    pub fn new(
-        lengths: Vec<usize>,
-        data: Vec<T>
-    ) -> ArraySequence<T> {
+    pub fn new(lengths: Vec<usize>, data: Vec<T>) -> ArraySequence<T> {
         // CumSum over lengths. [0, ..., ..., data.len()]
         // There's an additional offset at the end because we want a
         // branchless `Index<usize>` function.
-        let offsets = [0].iter().chain(&lengths).scan(0, |state, x| {
-            *state += *x;
-            Some(*state)
-        }).collect::<Vec<usize>>();
+        let offsets = [0]
+            .iter()
+            .chain(&lengths)
+            .scan(0, |state, x| {
+                *state += *x;
+                Some(*state)
+            }).collect::<Vec<usize>>();
 
         // Check if `offsets` fits with the numbers of points in `data`
         let expected_points = *offsets.last().unwrap();
         if expected_points != data.len() {
             panic!(
                 "`offsets` declares {} points but `data` contains {} points.",
-                expected_points, data.len());
+                expected_points,
+                data.len()
+            );
         }
 
         ArraySequence { offsets, data: data }
@@ -158,8 +157,9 @@ impl<T> ArraySequence<T> {
     }
 
     pub fn filter<P>(&self, predicate: &mut P) -> ArraySequence<T>
-        where P: FnMut(&[T]) -> bool,
-              T: Clone
+    where
+        P: FnMut(&[T]) -> bool,
+        T: Clone,
     {
         let mut new = ArraySequence::<T>::empty();
         for array in self {
