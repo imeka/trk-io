@@ -10,7 +10,7 @@ mod nifti_tests {
     use nifti::{InMemNiftiObject, NiftiObject};
     use test::{get_random_trk_path, load_trk};
     use trk_io::affine::{rasmm_to_trackvis, trackvis_to_rasmm};
-    use trk_io::affine_nifti::raw_affine_from_nifti;
+    use trk_io::affine_nifti::get_nifti_affine;
     use trk_io::{Affine, Affine4, CHeader, Header, Point, Translation, Writer};
 
     #[test]
@@ -21,7 +21,7 @@ mod nifti_tests {
 
         {
             let mut writer = Writer::new(&write_to, Some(Header::from_nifti(&header))).unwrap();
-            writer.apply_affine(&raw_affine_from_nifti(&header));
+            writer.apply_affine(&get_nifti_affine(&header));
             writer.write(
                 &[
                     Point::new(13.75, 27.90, 51.55),
@@ -43,7 +43,7 @@ mod nifti_tests {
     #[test]
     fn test_qform_affine() {
         let header = InMemNiftiObject::from_file("data/qform.nii.gz").unwrap().header().clone();
-        let affine = raw_affine_from_nifti(&header);
+        let affine = get_nifti_affine(&header);
         assert_eq!(
             affine,
             Affine4::new(

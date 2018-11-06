@@ -4,45 +4,79 @@ use nifti::NiftiHeader;
 use affine::get_affine_and_translation;
 use Affine4;
 
-pub fn raw_affine_from_nifti(h: &NiftiHeader) -> Affine4 {
-    if h.sform_code != 0 {
-        get_sform(h)
+const QUARTERNION_THRESHOLD: f64 = ::std::f64::EPSILON * 3.0;
+
+pub fn get_nifti_affine(header: &NiftiHeader) -> Affine4 {
+    if header.sform_code != 0 {
+        get_sform(header)
+    } else if header.qform_code != 0 {
+        get_qform(header)
     } else {
-        get_qform(h)
+        get_base_affine(header)
     }
-    // TODO else return base_affine?
 }
 
-pub fn get_sform(h: &NiftiHeader) -> Affine4 {
+fn get_sform(header: &NiftiHeader) -> Affine4 {
     Affine4::new(
-        h.srow_x[0], h.srow_x[1], h.srow_x[2], h.srow_x[3],
-        h.srow_y[0], h.srow_y[1], h.srow_y[2], h.srow_y[3],
-        h.srow_z[0], h.srow_z[1], h.srow_z[2], h.srow_z[3],
+        header.srow_x[0], header.srow_x[1], header.srow_x[2], header.srow_x[3],
+        header.srow_y[0], header.srow_y[1], header.srow_y[2], header.srow_y[3],
+        header.srow_z[0], header.srow_z[1], header.srow_z[2], header.srow_z[3],
         0.0, 0.0, 0.0, 1.0,
     )
 }
 
 /// Return 4x4 affine matrix from qform parameters in header
-pub fn get_qform(h: &NiftiHeader) -> Affine4 {
-    if h.pixdim[1] < 0.0 || h.pixdim[2] < 0.0 || h.pixdim[3] < 0.0 {
+fn get_qform(header: &NiftiHeader) -> Affine4 {
+    if header.pixdim[1] < 0.0 || header.pixdim[2] < 0.0 || header.pixdim[3] < 0.0 {
         panic!("All spacings (pixdim) should be positive");
     }
-    if h.pixdim[0].abs() != 1.0 {
+    if header.pixdim[0].abs() != 1.0 {
         panic!("qfac (pixdim[0]) should be 1 or -1");
     }
 
-    let quaternion = get_qform_quaternion(h);
+    let quaternion = get_qform_quaternion(header);
     let r = quaternion_to_affine(quaternion);
     let s = Matrix3::from_diagonal(&Vector3::new(
-        h.pixdim[1] as f64,
-        h.pixdim[2] as f64,
-        (h.pixdim[3] * h.pixdim[0]) as f64,
+        header.pixdim[1] as f64,
+        header.pixdim[2] as f64,
+        (header.pixdim[3] * header.pixdim[0]) as f64,
     ));
     let m = r * s;
     Affine4::new(
-        m[0] as f32, m[3] as f32, m[6] as f32, h.quatern_x,
-        m[1] as f32, m[4] as f32, m[7] as f32, h.quatern_y,
-        m[2] as f32, m[5] as f32, m[8] as f32, h.quatern_z,
+        m[0] as f32, m[3] as f32, m[6] as f32, header.quatern_x,
+        m[1] as f32, m[4] as f32, m[7] as f32, header.quatern_y,
+        m[2] as f32, m[5] as f32, m[8] as f32, header.quatern_z,
+        0.0, 0.0, 0.0, 1.0,
+    )
+}
+
+/// Get affine from basic (shared) header fields
+///
+/// Note that we get the translations from the center of the image.
+pub fn get_base_affine(header: &NiftiHeader) -> Affine4 {
+    let d = header.dim[0] as usize;
+    shape_zoom_affine(&header.dim[1..d + 1], &header.pixdim[1..d + 1])
+}
+
+/// Get affine implied by given shape and zooms
+///
+/// We get the translations from the center of the image (implied by `shape`).
+fn shape_zoom_affine(shape: &[u16], spacing: &[f32]) -> Affine4 {
+    // Get translations from center of image
+    let origin = Vector3::new(
+        (shape[0] as f32 - 1.0) / 2.0,
+        (shape[1] as f32 - 1.0) / 2.0,
+        (shape[2] as f32 - 1.0) / 2.0,
+    );
+    let spacing = [
+        -spacing[0] as f32,
+        spacing[1] as f32,
+        spacing[2] as f32,
+    ];
+    Affine4::new(
+        spacing[0], 0.0, 0.0, -origin[0] * spacing[0],
+        0.0, spacing[1], 0.0, -origin[1] * spacing[1],
+        0.0, 0.0, spacing[2], -origin[2] * spacing[2],
         0.0, 0.0, 0.0, 1.0,
     )
 }
@@ -128,7 +162,7 @@ pub fn set_qform(header: &mut NiftiHeader, affine4: &Matrix4<f64>, code: usize) 
 pub fn get_qform_quaternion(h: &NiftiHeader) -> Quaternion<f64> {
     fill_positive(
         Vector3::new(h.quatern_b as f64, h.quatern_c as f64, h.quatern_d as f64),
-        Some(-3.5762786865234375e-07),
+        Some(QUARTERNION_THRESHOLD),
     ) // TODO self.quaternion_threshold
 }
 
@@ -144,8 +178,7 @@ pub fn get_qform_quaternion(h: &NiftiHeader) -> Quaternion<f64> {
 /// w2 = 1.0-(x*x+y*y+z*z) can be near zero, which will lead to numerical instability in sqrt.
 /// Here we use the system maximum float type to reduce numerical instability.
 pub fn fill_positive(xyz: Vector3<f64>, w2_thresh: Option<f64>) -> Quaternion<f64> {
-    let w2_thresh =
-        if let Some(w2_thresh) = w2_thresh { w2_thresh } else { ::std::f64::EPSILON * 3.0 };
+    let w2_thresh = if let Some(w2_thresh) = w2_thresh { w2_thresh } else { QUARTERNION_THRESHOLD };
     let w2 = 1.0 - xyz.dot(&xyz);
     let w = if w2 < 0.0 {
         if w2 < w2_thresh {
@@ -246,6 +279,25 @@ fn quaternion_to_affine(q: Quaternion<f64>) -> Matrix3<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_shape_zoom_affine() {
+        let affine = shape_zoom_affine(&[3, 5, 7], &[3.0, 2.0, 1.0]);
+        assert_eq!(affine, Affine4::new(
+            -3.0, 0.0, 0.0, 3.0,
+            0.0, 2.0, 0.0, -4.0,
+            0.0, 0.0, 1.0, -3.0,
+            0.0, 0.0, 0.0, 1.0,
+        ));
+
+        let affine = shape_zoom_affine(&[256, 256, 54], &[0.9375, 0.9375, 3.0]);
+        assert_eq!(affine, Affine4::new(
+            -0.9375, 0.0, 0.0, 119.53125,
+            0.0, 0.9375, 0.0, -119.53125,
+            0.0, 0.0, 3.0, -79.5,
+            0.0, 0.0, 0.0, 1.0,
+        ));
+    }
 
     #[test]
     fn test_fill_positive() {
