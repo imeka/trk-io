@@ -23,7 +23,7 @@ pub struct Reader {
 
 impl Reader {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Reader> {
-        let f = File::open(path).expect("Can't read trk file.");
+        let f = File::open(&path)?;
         let mut reader = BufReader::new(f);
 
         let (header, endianness) = Header::read(&mut reader)?;
