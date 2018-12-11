@@ -106,7 +106,8 @@ impl<T> ArraySequence<T> {
             .scan(0, |state, x| {
                 *state += *x;
                 Some(*state)
-            }).collect::<Vec<usize>>();
+            })
+            .collect::<Vec<usize>>();
 
         // Check if `offsets` fits with the numbers of points in `data`
         let expected_points = *offsets.last().unwrap();

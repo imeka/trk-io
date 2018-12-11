@@ -68,11 +68,7 @@ fn shape_zoom_affine(shape: &[u16], spacing: &[f32]) -> Affine4 {
         (shape[1] as f32 - 1.0) / 2.0,
         (shape[2] as f32 - 1.0) / 2.0,
     );
-    let spacing = [
-        -spacing[0] as f32,
-        spacing[1] as f32,
-        spacing[2] as f32,
-    ];
+    let spacing = [-spacing[0] as f32, spacing[1] as f32, spacing[2] as f32];
     Affine4::new(
         spacing[0], 0.0, 0.0, -origin[0] * spacing[0],
         0.0, spacing[1], 0.0, -origin[1] * spacing[1],

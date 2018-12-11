@@ -36,7 +36,7 @@ pub struct CHeader {
     pub voxel_size: [f32; 3],
     pub origin: [f32; 3],
     pub n_scalars: i16,
-    pub scalar_name: [u8; 200],   // [10][20]
+    pub scalar_name: [u8; 200], // [10][20]
     pub n_properties: i16,
     pub property_name: [u8; 200], // [10][20]
     pub vox_to_ras: [f32; 16],    // [4][4]

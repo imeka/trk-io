@@ -148,7 +148,8 @@ fn orientations_to_axcodes(orientations: Orientations) -> String {
             } else {
                 labels[*axis].0.clone()
             }
-        }).collect::<Vec<String>>()
+        })
+        .collect::<Vec<_>>()
         .join("")
 }
 

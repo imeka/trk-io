@@ -1,5 +1,5 @@
-#comment_width = 100  # Nightly
-#format_strings = true
-#merge_imports = true
-newline_style = "Unix"
+comment_width = 100
+format_strings = true
+merge_imports = true
+wrap_comments = true
 use_small_heuristics = "Max"

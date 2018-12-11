@@ -27,9 +27,8 @@ Options:
 ";
 
 fn sampling_write(writer: &mut Writer, reader: Reader, number: usize, rng: &mut SmallRng) {
-    let mut sampled_indices = rand::seq::index::sample(
-        rng, reader.header.nb_streamlines, number
-    ).into_vec();
+    let mut sampled_indices =
+        rand::seq::index::sample(rng, reader.header.nb_streamlines, number).into_vec();
     sampled_indices.sort();
 
     let mut reader_iter = reader.into_iter();
