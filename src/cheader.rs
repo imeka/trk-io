@@ -306,7 +306,8 @@ fn test_endianness(reader: &mut BufReader<File>) -> Result<Endianness> {
 /// Normal case: name\0\0...
 /// Special case: name\0{number}\0\0...
 fn read_names(names_bytes: &[u8], nb: usize) -> Vec<String> {
-    let mut names = Vec::with_capacity(nb);
+    let mut at = 0;
+    let mut names = vec![String::from(""); nb];
     for names_byte in names_bytes.chunks(20) {
         if names_byte[0] == 0u8 {
             break;
@@ -317,13 +318,14 @@ fn read_names(names_bytes: &[u8], nb: usize) -> Vec<String> {
         if idx < 19 && names_byte[idx + 1] != 0u8 {
             let number = names_byte[idx + 1] - 48;
             for _ in 0..number {
-                names.push(name.clone());
+                names[at] = name.clone();
+                at += 1;
             }
         } else {
-            names.push(name);
+            names[at] = name;
+            at += 1;
         }
     }
-
     names
 }
 
@@ -341,5 +343,13 @@ mod tests {
         gt[..7].clone_from_slice(b"color_x");
         gt[20..27].clone_from_slice(b"color_y");
         assert_eq!(&header.scalar_name[..], &gt[..]);
+    }
+
+    #[test]
+    fn test_read_empty_names() {
+        // N scalars/properties without a empty description should still return a vector of N
+        // empty strings. It's not super practical, but that's the best we can do with such data.
+        let scalars = read_names(&vec![0; 80], 3);
+        assert_eq!(scalars, vec![String::from(""), String::from(""), String::from("")]);
     }
 }
