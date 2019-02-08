@@ -87,6 +87,12 @@ impl<T> Index<usize> for ArraySequence<T> {
     }
 }
 
+impl<T> Default for ArraySequence<T> {
+    fn default() -> Self {
+        ArraySequence::empty()
+    }
+}
+
 impl<T> ArraySequence<T> {
     pub fn empty() -> ArraySequence<T> {
         ArraySequence { offsets: vec![0], data: vec![] }
