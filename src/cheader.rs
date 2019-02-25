@@ -9,7 +9,7 @@ use nalgebra::{Vector4, U3};
 use orientation::{
     affine_to_axcodes, axcodes_to_orientations, inverse_orientations_affine, orientations_transform,
 };
-#[cfg(feature = "use_nifti")]
+#[cfg(feature = "nifti_images")]
 use Affine;
 use {Affine4, TrkEndianness};
 
@@ -61,7 +61,7 @@ pub struct CHeader {
 pub const HEADER_SIZE: usize = 1000;
 
 impl CHeader {
-    #[cfg(feature = "use_nifti")]
+    #[cfg(feature = "nifti_images")]
     pub fn from_nifti(
         dim: [u16; 8],
         pixdim: [f32; 8],
@@ -69,21 +69,24 @@ impl CHeader {
         srow_y: [f32; 4],
         srow_z: [f32; 4],
     ) -> CHeader {
+        #[rustfmt::skip]
         let affine = Affine::new(
             srow_x[0], srow_x[1], srow_x[2],
             srow_y[0], srow_y[1], srow_y[2],
             srow_z[0], srow_z[1], srow_z[2],
         );
+        #[rustfmt::skip]
+        let vox_to_ras = [
+            srow_x[0], srow_x[1], srow_x[2], srow_x[3],
+            srow_y[0], srow_y[1], srow_y[2], srow_y[3],
+            srow_z[0], srow_z[1], srow_z[2], srow_z[3],
+            0.0, 0.0, 0.0, 1.0,
+        ];
         let vo = affine_to_axcodes(&affine).into_bytes();
         CHeader {
             dim: [dim[1] as i16, dim[2] as i16, dim[3] as i16],
             voxel_size: [pixdim[1], pixdim[2], pixdim[3]],
-            vox_to_ras: [
-                srow_x[0], srow_x[1], srow_x[2], srow_x[3],
-                srow_y[0], srow_y[1], srow_y[2], srow_y[3],
-                srow_z[0], srow_z[1], srow_z[2], srow_z[3],
-                0.0, 0.0, 0.0, 1.0,
-            ],
+            vox_to_ras,
             voxel_order: [vo[0], vo[1], vo[2], 0u8],
             ..CHeader::default()
         }
@@ -136,6 +139,7 @@ impl CHeader {
         ));
         affine = scale * affine;
 
+        #[rustfmt::skip]
         let offset = Affine4::new(
             1.0, 0.0, 0.0, -0.5,
             0.0, 1.0, 0.0, -0.5,

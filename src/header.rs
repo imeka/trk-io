@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{BufReader, Result};
 
 use byteorder::WriteBytesExt;
-#[cfg(feature = "use_nifti")]
+#[cfg(feature = "nifti_images")]
 use nifti::NiftiHeader;
 
 use affine::get_affine_and_translation;
@@ -22,7 +22,7 @@ pub struct Header {
 }
 
 impl Header {
-    #[cfg(feature = "use_nifti")]
+    #[cfg(feature = "nifti_images")]
     pub fn from_nifti(h: &NiftiHeader) -> Header {
         let c_header = CHeader::from_nifti(h.dim, h.pixdim, h.srow_x, h.srow_y, h.srow_z);
         let affine4 = c_header.get_affine_to_rasmm();

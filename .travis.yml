@@ -9,7 +9,7 @@ rust:
   - nightly
 env:
   - FEATURES_FLAG=""
-  - FEATURES_FLAG="--features use_nifti"
+  - FEATURES_FLAG="--features nifti_images"
 script: cargo test $FEATURES_FLAG
 matrix:
   allow_failures:

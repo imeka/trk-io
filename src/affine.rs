@@ -1,8 +1,8 @@
 use nalgebra::{Matrix3, Matrix4, Scalar, Vector3, U3};
-#[cfg(feature = "use_nifti")]
+#[cfg(feature = "nifti_images")]
 use nifti::NiftiHeader;
 
-#[cfg(feature = "use_nifti")]
+#[cfg(feature = "nifti_images")]
 use {Affine4, CHeader};
 
 pub fn get_affine_and_translation<T: Scalar>(affine: &Matrix4<T>) -> (Matrix3<T>, Vector3<T>) {
@@ -11,12 +11,12 @@ pub fn get_affine_and_translation<T: Scalar>(affine: &Matrix4<T>) -> (Matrix3<T>
     (affine, translation)
 }
 
-#[cfg(feature = "use_nifti")]
+#[cfg(feature = "nifti_images")]
 pub fn rasmm_to_trackvis(h: &NiftiHeader) -> Affine4 {
     trackvis_to_rasmm(h).try_inverse().unwrap()
 }
 
-#[cfg(feature = "use_nifti")]
+#[cfg(feature = "nifti_images")]
 pub fn trackvis_to_rasmm(h: &NiftiHeader) -> Affine4 {
     let c_header = CHeader::from_nifti(h.dim, h.pixdim, h.srow_x, h.srow_y, h.srow_z);
     c_header.get_affine_to_rasmm()

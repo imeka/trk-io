@@ -11,7 +11,7 @@ categories = ["data-structures", "science"]
 license = "BSD-2-Clause"
 
 [features]
-use_nifti = ["nifti"]
+nifti_images = ["nifti"]
 
 [dependencies]
 byteorder = "1.3"

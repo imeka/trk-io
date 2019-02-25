@@ -1,10 +1,10 @@
 extern crate byteorder;
 extern crate nalgebra;
-#[cfg(feature = "use_nifti")]
+#[cfg(feature = "nifti_images")]
 extern crate nifti;
 
 pub mod affine;
-#[cfg(feature = "use_nifti")]
+#[cfg(feature = "nifti_images")]
 pub mod affine_nifti;
 mod array_sequence;
 mod cheader;
