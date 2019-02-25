@@ -4,8 +4,6 @@ extern crate nalgebra;
 extern crate nifti;
 
 pub mod affine;
-#[cfg(feature = "nifti_images")]
-pub mod affine_nifti;
 mod array_sequence;
 mod cheader;
 mod header;
