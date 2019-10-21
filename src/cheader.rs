@@ -98,6 +98,13 @@ impl CHeader {
         Ok(())
     }
 
+    pub fn clear_scalars(&mut self) {
+        self.n_scalars = 0;
+        for b in self.scalar_name.iter_mut() {
+            *b = 0;
+        }
+    }
+
     pub fn add_scalar(&mut self, name: &str) -> Result<()> {
         if self.n_scalars > 10 {
             Err(Error::new(ErrorKind::InvalidInput, "Trk header is already full of scalars (10)"))
@@ -115,6 +122,13 @@ impl CHeader {
 
     pub fn get_scalars_name(&self) -> Vec<String> {
         read_names(&self.scalar_name, self.n_scalars as usize)
+    }
+
+    pub fn clear_properties(&mut self) {
+        self.n_properties = 0;
+        for b in self.property_name.iter_mut() {
+            *b = 0;
+        }
     }
 
     pub fn add_property(&mut self, name: &str) -> Result<()> {
