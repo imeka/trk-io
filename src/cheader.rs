@@ -117,6 +117,24 @@ impl CHeader {
         read_names(&self.scalar_name, self.n_scalars as usize)
     }
 
+    pub fn add_property(&mut self, name: &str) -> Result<()> {
+        if self.n_properties > 10 {
+            Err(Error::new(
+                ErrorKind::InvalidInput,
+                "Trk header is already full of properties (10)",
+            ))
+        } else if name.len() > 20 {
+            Err(Error::new(ErrorKind::InvalidInput, "New property name must be <= 20 characters."))
+        } else if !name.is_ascii() {
+            Err(Error::new(ErrorKind::InvalidInput, "New property name must be pure ascii."))
+        } else {
+            let pos = 20 * self.n_properties as usize;
+            self.property_name[pos..pos + name.len()].clone_from_slice(name.as_bytes());
+            self.n_properties += 1;
+            return Ok(());
+        }
+    }
+
     pub fn get_properties_name(&self) -> Vec<String> {
         read_names(&self.property_name, self.n_properties as usize)
     }

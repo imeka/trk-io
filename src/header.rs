@@ -44,6 +44,12 @@ impl Header {
         Ok(())
     }
 
+    pub fn add_property(&mut self, name: &str) -> Result<()> {
+        self.c_header.add_property(name)?;
+        self.properties_name.push(name.to_string());
+        Ok(())
+    }
+
     pub fn read(reader: &mut BufReader<File>) -> Result<(Header, Endianness)> {
         let (c_header, endianness) = CHeader::read(reader)?;
         let affine4 = c_header.get_affine_to_rasmm();
