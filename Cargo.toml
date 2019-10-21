@@ -23,8 +23,6 @@ rand = { version = "0.7", features = ["small_rng"] }
 tempdir = "0.3"
 
 [dependencies.nifti]
-#version = "0.8"
-git = "https://github.com/nilgoyette/nifti-rs"
-branch = "ndarray13"
+version = "0.8"
 features = ["nalgebra_affine", "ndarray_volumes"]
 optional = true
