@@ -6,7 +6,7 @@ use std::path::Path;
 use std::str;
 
 use docopt::Docopt;
-use rand::{rngs::SmallRng, FromEntropy, Rng, SeedableRng};
+use rand::{rngs::SmallRng, Rng, SeedableRng};
 
 use trk_io::{Reader, Writer};
 
