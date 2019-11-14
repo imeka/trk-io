@@ -38,6 +38,24 @@ impl Header {
         }
     }
 
+    /// Clear all scalars and properties from `self`.
+    pub fn clear_scalars_and_properties(&mut self) {
+        self.clear_scalars();
+        self.clear_properties();
+    }
+
+    /// Clear all scalars from `self`.
+    pub fn clear_scalars(&mut self) {
+        self.scalars_name.clear();
+        self.c_header.clear_scalars();
+    }
+
+    /// Clear all properties from `self`.
+    pub fn clear_properties(&mut self) {
+        self.properties_name.clear();
+        self.c_header.clear_properties();
+    }
+
     /// Clear all scalars and properties from `self` and copy scalars and properties from `rhs`.
     pub fn copy_scalars_and_properties(&mut self, rhs: &Self) {
         self.copy_scalars(rhs);
@@ -46,8 +64,7 @@ impl Header {
 
     /// Clear all scalars from `self` and copy scalars from `rhs`.
     pub fn copy_scalars(&mut self, rhs: &Self) {
-        self.scalars_name.clear();
-        self.c_header.clear_scalars();
+        self.clear_scalars();
         for scalar in &rhs.scalars_name {
             self.add_scalar(scalar).unwrap(); // Can't fail
         }
@@ -55,8 +72,7 @@ impl Header {
 
     /// Clear all properties from `self` and copy properties from `rhs`.
     pub fn copy_properties(&mut self, rhs: &Self) {
-        self.properties_name.clear();
-        self.c_header.clear_properties();
+        self.clear_properties();
         for property in &rhs.properties_name {
             self.add_property(property).unwrap(); // Can't fail
         }
