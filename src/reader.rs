@@ -1,12 +1,17 @@
-use std::fs::File;
-use std::io::{BufReader, Result};
-use std::path::Path;
+use std::{
+    fs::File,
+    io::{BufReader, Result},
+    path::Path,
+};
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 
 use cheader::Endianness;
 use tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem};
-use {Affine, ArraySequence, Header, Translation};
+use Affine;
+use ArraySequence;
+use Header;
+use Translation;
 
 pub struct Reader {
     reader: BufReader<File>,
@@ -23,9 +28,7 @@ pub struct Reader {
 
 impl Reader {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Reader> {
-        let f = File::open(&path)?;
-        let mut reader = BufReader::new(f);
-
+        let mut reader = BufReader::new(File::open(&path)?);
         let (header, endianness) = Header::read(&mut reader)?;
         let affine_to_rasmm = header.affine_to_rasmm;
         let translation = header.translation;

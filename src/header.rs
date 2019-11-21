@@ -1,5 +1,8 @@
-use std::fs::File;
-use std::io::{BufReader, Result};
+use std::{
+    fs::File,
+    io::{BufReader, Result},
+    path::Path,
+};
 
 use byteorder::WriteBytesExt;
 #[cfg(feature = "nifti_images")]
@@ -7,7 +10,9 @@ use nifti::NiftiHeader;
 
 use affine::get_affine_and_translation;
 use cheader::{CHeader, Endianness};
-use {Affine, Affine4, Translation};
+use Affine;
+use Affine4;
+use Translation;
 
 #[derive(Clone)]
 pub struct Header {
@@ -23,6 +28,7 @@ pub struct Header {
 
 impl Header {
     #[cfg(feature = "nifti_images")]
+    /// Build a trk header using the affine from a Nifti header.
     pub fn from_nifti(h: &NiftiHeader) -> Header {
         let c_header = CHeader::from_nifti(h.dim, h.pixdim, h.srow_x, h.srow_y, h.srow_z);
         let affine4 = c_header.get_affine_to_rasmm();
@@ -36,6 +42,35 @@ impl Header {
             scalars_name: vec![],
             properties_name: vec![],
         }
+    }
+
+    /// Retrieve a trk header, along with its byte order, from a file in the file system.
+    pub fn from_trk<P: AsRef<Path>>(path: P) -> Result<Header> {
+        let mut reader = BufReader::new(File::open(&path)?);
+        let (header, _) = Self::read(&mut reader)?;
+        Ok(header)
+    }
+
+    /// Retrieve a trk header, along with its byte order, from the given `BufReader`. It is assumed
+    /// that the `reader` is currently at the start of the trk header.
+    pub fn read(reader: &mut BufReader<File>) -> Result<(Header, Endianness)> {
+        let (c_header, endianness) = CHeader::read(reader)?;
+        let affine4 = c_header.get_affine_to_rasmm();
+        let (affine, translation) = get_affine_and_translation(&affine4);
+        let nb_streamlines = c_header.n_count as usize;
+        let scalars_name = c_header.get_scalars_name();
+        let properties_name = c_header.get_properties_name();
+
+        let header = Header {
+            c_header,
+            affine4_to_rasmm: affine4,
+            affine_to_rasmm: affine,
+            translation,
+            nb_streamlines,
+            scalars_name,
+            properties_name,
+        };
+        Ok((header, endianness))
     }
 
     /// Clear all scalars and properties from `self`.
@@ -88,26 +123,6 @@ impl Header {
         self.c_header.add_property(name)?;
         self.properties_name.push(name.to_string());
         Ok(())
-    }
-
-    pub fn read(reader: &mut BufReader<File>) -> Result<(Header, Endianness)> {
-        let (c_header, endianness) = CHeader::read(reader)?;
-        let affine4 = c_header.get_affine_to_rasmm();
-        let (affine, translation) = get_affine_and_translation(&affine4);
-        let nb_streamlines = c_header.n_count as usize;
-        let scalars_name = c_header.get_scalars_name();
-        let properties_name = c_header.get_properties_name();
-
-        let header = Header {
-            c_header,
-            affine4_to_rasmm: affine4,
-            affine_to_rasmm: affine,
-            translation,
-            nb_streamlines,
-            scalars_name,
-            properties_name,
-        };
-        Ok((header, endianness))
     }
 
     pub fn write<W: WriteBytesExt>(&self, writer: &mut W) -> Result<()> {
