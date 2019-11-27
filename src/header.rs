@@ -51,6 +51,11 @@ impl Header {
         Ok(header)
     }
 
+    /// Retrieve a copy of the original trk header, as read on disk.
+    pub fn raw_header(&self) -> CHeader {
+        self.c_header.clone()
+    }
+
     /// Retrieve a trk header, along with its byte order, from the given `BufReader`. It is assumed
     /// that the `reader` is currently at the start of the trk header.
     pub fn read(reader: &mut BufReader<File>) -> Result<(Header, Endianness)> {

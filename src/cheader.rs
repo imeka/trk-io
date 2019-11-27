@@ -195,12 +195,6 @@ impl CHeader {
         voxel_to_rasmm * affine
     }
 
-    pub fn read_from_file(path: &str) -> Result<(CHeader, Endianness)> {
-        let f = File::open(path).expect("Can't read trk file.");
-        let mut reader = BufReader::new(f);
-        CHeader::read(&mut reader)
-    }
-
     pub fn read(reader: &mut BufReader<File>) -> Result<(CHeader, Endianness)> {
         reader.seek(SeekFrom::Start(0))?;
         let endianness = test_endianness(reader)?;
