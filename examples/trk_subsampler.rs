@@ -2,9 +2,6 @@ extern crate docopt;
 extern crate rand;
 extern crate trk_io;
 
-use std::path::Path;
-use std::str;
-
 use docopt::Docopt;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 
@@ -44,7 +41,7 @@ fn main() {
     let args = Docopt::new(USAGE)
         .and_then(|dopt| dopt.version(Some(version)).parse())
         .unwrap_or_else(|e| e.exit());
-    let input = Path::new(args.get_str("<input>"));
+    let input = std::path::Path::new(args.get_str("<input>"));
     if !input.exists() {
         panic!("Input trk '{:?}' doesn't exist.", input);
     }
@@ -69,8 +66,8 @@ fn main() {
         let number = size.min(nb);
         if number == 0 {
             panic!(
-                "You requested a subsampling of 0 streamline. \
-                 Please ask for any non-zero positive number."
+                "You requested a subsampling of 0 streamline. Please ask for any non-zero \
+                 positive number."
             );
         } else if number >= size {
             println!(

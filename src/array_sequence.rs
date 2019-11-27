@@ -1,7 +1,9 @@
-use std::mem;
-use std::ops::{Index, Range};
-use std::slice;
-use std::vec::Vec;
+use std::{
+    mem,
+    ops::{Index, Range},
+    slice,
+    vec::Vec,
+};
 
 #[derive(Clone, PartialEq)]
 pub struct ArraySequence<T> {

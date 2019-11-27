@@ -9,8 +9,10 @@ mod test;
 mod nifti_tests {
     use nifti::{InMemNiftiObject, NiftiObject};
     use test::{get_random_trk_path, load_trk};
-    use trk_io::affine::{rasmm_to_trackvis, trackvis_to_rasmm};
-    use trk_io::{Affine, Affine4, CHeader, Header, Point, Translation, Writer};
+    use trk_io::{
+        affine::{rasmm_to_trackvis, trackvis_to_rasmm},
+        Affine, Affine4, CHeader, Header, Point, Translation, Writer,
+    };
 
     #[test]
     fn test_complex_affine() {
@@ -42,6 +44,7 @@ mod nifti_tests {
     #[test]
     fn test_qform_affine() {
         let header = InMemNiftiObject::from_file("data/qform.nii.gz").unwrap().header().clone();
+        #[rustfmt::skip]
         assert_eq!(
             header.affine(),
             Affine4::new(
@@ -64,6 +67,7 @@ mod nifti_tests {
         );
         assert_eq!(c_header.dim, [100, 100, 100]);
         assert_eq!(c_header.voxel_size, [1.1, 1.2, 1.3]);
+        #[rustfmt::skip]
         assert_eq!(
             c_header.vox_to_ras,
             [
@@ -79,7 +83,6 @@ mod nifti_tests {
     #[test]
     fn test_complex_header_from_nifti() {
         let nifti_header = InMemNiftiObject::from_file("data/3x3.nii.gz").unwrap().header().clone();
-
         let c_header = CHeader::from_nifti(
             nifti_header.dim,
             nifti_header.pixdim,
@@ -89,6 +92,7 @@ mod nifti_tests {
         );
         assert_eq!(c_header.dim, [3, 3, 3]);
         assert_eq!(c_header.voxel_size, [2.0, 2.0, 2.0]);
+        #[rustfmt::skip]
         assert_eq!(
             c_header.vox_to_ras,
             [
@@ -101,6 +105,7 @@ mod nifti_tests {
         assert_eq!(c_header.voxel_order, *b"LAS\0");
 
         let header = Header::from_nifti(&nifti_header);
+        #[rustfmt::skip]
         assert_eq!(
             header.affine_to_rasmm,
             Affine::new(
@@ -118,6 +123,7 @@ mod nifti_tests {
     #[test]
     fn test_complex_affine_from_nifti() {
         let nifti_header = InMemNiftiObject::from_file("data/3x3.nii.gz").unwrap().header().clone();
+        #[rustfmt::skip]
         assert_eq!(
             trackvis_to_rasmm(&nifti_header),
             Affine4::new(
@@ -127,6 +133,7 @@ mod nifti_tests {
                 0.0, 0.0, 0.0, 1.0,
             )
         );
+        #[rustfmt::skip]
         assert_eq!(
             rasmm_to_trackvis(&nifti_header),
             Affine4::new(

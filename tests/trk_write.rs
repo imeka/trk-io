@@ -135,6 +135,7 @@ fn test_write_standard_lps() {
 
     {
         let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
+        #[rustfmt::skip]
         assert_eq!(
             writer.affine4,
             Affine4::new(
@@ -151,6 +152,7 @@ fn test_write_standard_lps() {
 
     let (header, tractogram) = load_trk(&write_to);
     assert_eq!(header.nb_streamlines, 10);
+    #[rustfmt::skip]
     assert_eq!(
         header.affine4_to_rasmm,
         Affine4::new(

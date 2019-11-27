@@ -1,10 +1,6 @@
 extern crate docopt;
 extern crate trk_io;
 
-use std::path::Path;
-use std::str;
-use std::usize;
-
 use docopt::Docopt;
 use trk_io::{Point, Reader};
 
@@ -31,7 +27,7 @@ fn main() {
         .and_then(|dopt| dopt.version(Some(version)).parse())
         .unwrap_or_else(|e| e.exit());
 
-    let input = Path::new(args.get_str("<input>"));
+    let input = std::path::Path::new(args.get_str("<input>"));
     if !input.exists() {
         panic!("Input trk '{:?}' doesn't exist.", input);
     }
@@ -43,7 +39,7 @@ fn main() {
 
     // nb - 1 because we don't want to print the last \n
     let nb = args.get_str("<nb>").parse::<usize>().unwrap() - 1;
-    let upto = args.get_str("--upto").parse::<usize>().unwrap_or(usize::MAX);
+    let upto = args.get_str("--upto").parse::<usize>().unwrap_or(std::usize::MAX);
     let first_part = upto / 2;
 
     let reader = Reader::new(args.get_str("<input>")).expect("Read header");

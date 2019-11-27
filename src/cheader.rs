@@ -1,7 +1,9 @@
-use std::fmt;
-use std::fs::File;
-use std::io::{BufReader, BufWriter, Error, ErrorKind, Read, Result, Seek, SeekFrom};
-use std::str::from_utf8;
+use std::{
+    fmt,
+    fs::File,
+    io::{BufReader, BufWriter, Error, ErrorKind, Read, Result, Seek, SeekFrom},
+    str::from_utf8,
+};
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt};
 use nalgebra::{Vector4, U3};

@@ -1,5 +1,7 @@
+extern crate nalgebra;
 extern crate trk_io;
 
+use nalgebra::Vector3;
 use trk_io::{Affine, ArraySequence, Header, Point, Reader, Tractogram, Translation};
 
 #[test]
@@ -89,11 +91,8 @@ fn test_load_standard() {
 fn test_load_standard_lps() {
     let mut reader = Reader::new("data/standard.LPS.trk").unwrap();
     let Tractogram { streamlines, scalars, properties } = reader.read_all();
-    assert_eq!(reader.affine_to_rasmm, Affine::new(
-        -1.0, 0.0, 0.0,
-        0.0, -1.0, 0.0,
-        0.0, 0.0, 1.0,
-    ));
+    #[rustfmt::skip]
+    assert_eq!(reader.affine_to_rasmm, Affine::from_diagonal(&Vector3::new(-1.0, -1.0, 1.0)));
     assert_eq!(reader.translation, Translation::new(3.5, 13.5, -1.0));
 
     assert_eq!(streamlines.len(), 120);

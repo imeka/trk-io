@@ -75,6 +75,7 @@ fn io_orientations(affine: &Affine) -> Orientations {
     // and we can leave them as they are
     zooms.apply(|z| if z == 0.0 { 1.0 } else { z });
 
+    #[rustfmt::skip]
     let rs = Affine::new(
         affine[0] / zooms[0], affine[3] / zooms[1], affine[6] / zooms[2],
         affine[1] / zooms[0], affine[4] / zooms[1], affine[7] / zooms[2],
@@ -141,7 +142,7 @@ fn orientations_to_axcodes(orientations: Orientations) -> String {
     ];
 
     orientations
-        .into_iter()
+        .iter()
         .map(|&(ref axis, ref direction)| {
             if *direction == Direction::Normal {
                 labels[*axis].1.clone()

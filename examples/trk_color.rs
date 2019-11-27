@@ -1,9 +1,6 @@
 extern crate docopt;
 extern crate trk_io;
 
-use std::path::Path;
-use std::str;
-
 use docopt::Docopt;
 use trk_io::{Header, Point, Reader, Writer};
 
@@ -31,7 +28,7 @@ fn main() {
         .and_then(|dopt| dopt.version(Some(version)).parse())
         .unwrap_or_else(|e| e.exit());
 
-    let input = Path::new(args.get_str("<input>"));
+    let input = std::path::Path::new(args.get_str("<input>"));
     if !input.exists() {
         panic!("Input trk '{:?}' doesn't exist.", input);
     }

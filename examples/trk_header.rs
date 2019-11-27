@@ -1,10 +1,7 @@
 extern crate docopt;
 extern crate trk_io;
 
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
-use std::str;
+use std::{fs::File, io::BufReader, path::Path, str};
 
 use docopt::Docopt;
 

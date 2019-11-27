@@ -1,6 +1,8 @@
-use std::fs::File;
-use std::io::{BufWriter, Result};
-use std::path::Path;
+use std::{
+    fs::File,
+    io::{BufWriter, Result},
+    path::Path,
+};
 
 use byteorder::WriteBytesExt;
 
