@@ -3,6 +3,7 @@ os:
   - linux
   - osx
 language: rust
+sudo: required
 rust:
   - stable
   - beta
