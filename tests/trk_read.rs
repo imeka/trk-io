@@ -10,17 +10,12 @@ fn test_load_empty() {
         Reader::new("data/empty.trk").unwrap().read_all();
 
     assert_eq!(streamlines.len(), 0);
-    for _ in &streamlines {
-        panic!("Failed test.");
-    }
     assert!(scalars.is_empty());
     assert!(properties.is_empty());
 
     // Test generator
     let reader = Reader::new("data/empty.trk").unwrap();
-    for _ in reader.into_iter() {
-        panic!("Failed test.");
-    }
+    assert_eq!(reader.into_iter().count(), 0);
 }
 
 #[test]
@@ -46,7 +41,7 @@ fn test_load_simple() {
     assert!(properties.is_empty());
 
     // Test generator
-    let reader = Reader::new("data/empty.trk").unwrap();
+    let reader = Reader::new("data/simple.trk").unwrap();
     for (i, (streamline, _, _)) in reader.into_iter().enumerate() {
         if i == 0 {
             assert_eq!(streamline, first);
@@ -81,7 +76,7 @@ fn test_load_standard() {
     assert!(properties.is_empty());
 
     // Test generator
-    let reader = Reader::new("data/empty.trk").unwrap();
+    let reader = Reader::new("data/standard.trk").unwrap();
     for (streamline, _, _) in reader.into_iter() {
         assert_eq!(streamline.len(), 3);
     }
