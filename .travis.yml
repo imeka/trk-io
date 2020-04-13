@@ -1,7 +1,5 @@
 os:
-  - windows
   - linux
-  - osx
 language: rust
 sudo: required
 rust:
