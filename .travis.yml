@@ -7,14 +7,10 @@ sudo: required
 rust:
   - stable
   - beta
-  - nightly
 env:
   - FEATURES_FLAG=""
   - FEATURES_FLAG="--features nifti_images"
 script: cargo test $FEATURES_FLAG
-matrix:
-  allow_failures:
-    - rust: nightly
 
 addons:
   apt:
