@@ -1,5 +1,7 @@
 os:
+  - windows
   - linux
+  - osx
 language: rust
 sudo: required
 rust:
@@ -16,13 +18,14 @@ addons:
         packages:
             - libssl-dev
 
+# Only run coverage on Linux, Stable Rust and full features
 before_script: |
-  if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
+  if [[ "$FEATURES_FLAG" == "--features nifti_images" && "$TRAVIS_RUST_VERSION" == stable && "$TRAVIS_OS_NAME" == linux ]]; then
     cargo install cargo-tarpaulin
   fi
 
 after_success: |
-  if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
+  if [[ "$FEATURES_FLAG" == "--features nifti_images" && "$TRAVIS_RUST_VERSION" == stable && "$TRAVIS_OS_NAME" == linux ]]; then
     cargo tarpaulin --out Xml
     bash <(curl -s https://codecov.io/bash)
   fi
