@@ -1,6 +1,3 @@
-extern crate docopt;
-extern crate trk_io;
-
 use docopt::Docopt;
 use trk_io::{Point, Reader};
 

@@ -1,7 +1,3 @@
-extern crate docopt;
-extern crate rand;
-extern crate trk_io;
-
 use docopt::Docopt;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 

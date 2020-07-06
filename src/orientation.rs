@@ -23,11 +23,9 @@ licensed. The port to Rust has been done by:
 Copyright (c) 2017-2018 Nil Goyette <nil.goyette@gmail.com>
 */
 
-use std::f32;
-
 use nalgebra::{RowVector3, Vector4};
 
-use {Affine, Affine4, Translation};
+use crate::{Affine, Affine4, Translation};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Direction {

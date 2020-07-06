@@ -3,7 +3,7 @@ use nalgebra::{Matrix3, Matrix4, Scalar, Vector3, U3};
 use nifti::NiftiHeader;
 
 #[cfg(feature = "nifti_images")]
-use {Affine4, CHeader};
+use crate::{Affine4, CHeader};
 
 pub fn get_affine_and_translation<T: Scalar>(affine: &Matrix4<T>) -> (Matrix3<T>, Vector3<T>) {
     let translation = Vector3::<T>::new(affine[12], affine[13], affine[14]);

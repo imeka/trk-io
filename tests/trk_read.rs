@@ -1,6 +1,3 @@
-extern crate nalgebra;
-extern crate trk_io;
-
 use nalgebra::Vector3;
 use trk_io::{Affine, ArraySequence, Header, Point, Reader, Tractogram, Translation};
 

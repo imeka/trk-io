@@ -6,9 +6,11 @@ use std::{
 
 use byteorder::WriteBytesExt;
 
-use affine::get_affine_and_translation;
-use tractogram::{Point, RefTractogramItem, Tractogram, TractogramItem};
-use {Affine, Affine4, CHeader, Header, Translation, TrkEndianness};
+use crate::{
+    affine::get_affine_and_translation,
+    tractogram::{Point, RefTractogramItem, Tractogram, TractogramItem},
+    Affine, Affine4, CHeader, Header, Translation, TrkEndianness,
+};
 
 macro_rules! write_streamline {
     ($writer:ident, $streamline:expr, $scalars:expr, $properties:expr) => {
