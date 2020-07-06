@@ -2,11 +2,11 @@
 // import it. Because of this, I think it's acceptable to use a `allow(unused)` directive.
 #![allow(unused)]
 
-use tempdir::TempDir;
+use tempfile::TempDir;
 use trk_io::{Header, Reader, Streamlines, Tractogram};
 
 pub fn get_random_trk_path() -> String {
-    let dir = TempDir::new("trk-io").unwrap();
+    let dir = TempDir::new().unwrap();
     let path = dir.into_path().join("out.trk");
     path.to_str().unwrap().to_string()
 }
