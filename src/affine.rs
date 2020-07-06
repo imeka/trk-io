@@ -5,7 +5,10 @@ use nifti::NiftiHeader;
 #[cfg(feature = "nifti_images")]
 use crate::{Affine4, CHeader};
 
-pub fn get_affine_and_translation<T: Scalar>(affine: &Matrix4<T>) -> (Matrix3<T>, Vector3<T>) {
+pub fn get_affine_and_translation<T>(affine: &Matrix4<T>) -> (Matrix3<T>, Vector3<T>)
+where
+    T: Copy + Scalar,
+{
     let translation = Vector3::<T>::new(affine[12], affine[13], affine[14]);
     let affine = affine.fixed_slice::<U3, U3>(0, 0).into_owned();
     (affine, translation)
