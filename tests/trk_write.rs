@@ -1,6 +1,3 @@
-extern crate tempdir;
-extern crate trk_io;
-
 mod test;
 
 use std::iter::FromIterator;

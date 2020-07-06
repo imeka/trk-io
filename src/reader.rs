@@ -6,12 +6,11 @@ use std::{
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 
-use cheader::Endianness;
-use tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem};
-use Affine;
-use ArraySequence;
-use Header;
-use Translation;
+use crate::{
+    cheader::Endianness,
+    tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem},
+    Affine, ArraySequence, Header, Translation,
+};
 
 pub struct Reader {
     reader: BufReader<File>,

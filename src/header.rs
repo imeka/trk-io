@@ -8,11 +8,11 @@ use byteorder::WriteBytesExt;
 #[cfg(feature = "nifti_images")]
 use nifti::NiftiHeader;
 
-use affine::get_affine_and_translation;
-use cheader::{CHeader, Endianness};
-use Affine;
-use Affine4;
-use Translation;
+use crate::{
+    affine::get_affine_and_translation,
+    cheader::{CHeader, Endianness},
+    Affine, Affine4, Translation,
+};
 
 #[derive(Clone)]
 pub struct Header {

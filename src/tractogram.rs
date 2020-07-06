@@ -1,8 +1,6 @@
-use std::ops::Range;
-
 use nalgebra::Point3;
 
-use ArraySequence;
+use crate::ArraySequence;
 
 pub type Point = Point3<f32>;
 pub type Points = Vec<Point>;
@@ -47,7 +45,7 @@ impl<'data> IntoIterator for &'data Tractogram {
 
 pub struct TractogramIterator<'data> {
     tractogram: &'data Tractogram,
-    index: Range<usize>,
+    index: std::ops::Range<usize>,
 }
 
 impl<'data> Iterator for TractogramIterator<'data> {

@@ -1,5 +1,3 @@
-extern crate trk_io;
-
 use trk_io::{ArraySequence, Point};
 
 fn get_toy_streamlines() -> ArraySequence<Point> {
