@@ -46,7 +46,7 @@ fn main() {
     let mut writer = Writer::new(args.get_str("<output>"), Some(reader.header.clone())).unwrap();
 
     let mut rng = match args.get_str("--seed").parse::<u8>() {
-        Ok(seed) => SmallRng::from_seed([seed; 16]),
+        Ok(seed) => SmallRng::from_seed([seed; 32]),
         Err(_) => SmallRng::from_entropy(),
     };
 
