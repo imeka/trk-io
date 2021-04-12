@@ -1,6 +1,6 @@
 [package]
 name = "trk-io"
-version = "0.18.0"
+version = "0.19.0"
 authors = ["Nil Goyette <nil.goyette@imeka.ca>"]
 
 description = "TrackVis (*.trk) reader and writer"
@@ -21,9 +21,9 @@ tempfile = "3.2"
 
 [dependencies]
 byteorder = "1.4"
-nalgebra = "0.24"
+nalgebra = "0.25"
 
 [dependencies.nifti]
-version = "0.12"
+version = "0.13"
 features = ["nalgebra_affine", "ndarray_volumes"]
 optional = true
