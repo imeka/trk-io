@@ -21,9 +21,9 @@ tempfile = "3.2"
 
 [dependencies]
 byteorder = "1.4"
-nalgebra = "0.25"
+nalgebra = "0.27"
 
 [dependencies.nifti]
-version = "0.13"
+version = "0.14"
 features = ["nalgebra_affine", "ndarray_volumes"]
 optional = true
