@@ -20,14 +20,18 @@ all copies or substantial portions of the Software. */
 /* The ideas in this file were taken from the NiBabel project, which is MIT
 licensed. The port to Rust has been done by:
 
-Copyright (c) 2017-2018 Nil Goyette <nil.goyette@gmail.com>
+Copyright (c) 2017-2022 Nil Goyette <nil.goyette@gmail.com>
 */
 
 use nalgebra::{RowVector3, Vector4};
+#[cfg(feature = "nifti_images")]
+use ndarray::{ArrayBase, Axis, DataMut, Dimension, Zip};
+#[cfg(feature = "nifti_images")]
+use nifti::DataElement;
 
 use crate::{Affine, Affine4, Translation};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Direction {
     Normal,
     Reversed,
@@ -60,7 +64,7 @@ pub fn affine_to_axcodes(affine: &Affine) -> String {
 /// The calculated orientations can be used to transform associated arrays to
 /// best match the output orientations. If `p` > `q`, then some of the output
 /// axes should be considered dropped in this orientation.
-fn io_orientations(affine: &Affine) -> Orientations {
+pub fn io_orientations(affine: &Affine) -> Orientations {
     // Extract the underlying rotation, zoom, shear matrix
     let rzs2 = affine.component_mul(affine);
     let mut zooms = RowVector3::new(
@@ -132,7 +136,7 @@ fn io_orientations(affine: &Affine) -> Orientations {
 }
 
 /// Convert orientation `orientations` to labels for axis directions
-fn orientations_to_axcodes(orientations: Orientations) -> String {
+pub fn orientations_to_axcodes(orientations: Orientations) -> String {
     let labels = [
         ("L".to_string(), "R".to_string()),
         ("P".to_string(), "A".to_string()),
@@ -190,6 +194,52 @@ pub fn orientations_transform(
         }
     }
     result
+}
+
+#[cfg(feature = "nifti_images")]
+/// Apply transformations implied by `orientations` to the first n axes of the array `arr`.
+pub fn apply_orientation<S, A, D>(
+    mut arr: ArrayBase<S, D>,
+    orientations: Orientations,
+) -> ArrayBase<S, D>
+where
+    S: DataMut<Elem = A>,
+    A: DataElement,
+    D: Dimension,
+{
+    // Apply orientation transformations
+    for (axis, &(_, direction)) in orientations.iter().enumerate() {
+        if direction == Direction::Reversed {
+            Zip::from(arr.lanes_mut(Axis(axis))).for_each(|mut arr| {
+                let n = arr.len();
+                for i in 0..n / 2 {
+                    let tmp = arr[n - 1 - i];
+                    arr[n - 1 - i] = arr[i];
+                    arr[i] = tmp;
+                }
+            });
+        }
+    }
+
+    // Orientation indicates the transpose that has occurred - we reverse it
+    let mut x = (orientations[0].0, 0);
+    let mut y = (orientations[1].0, 1);
+    let mut z = (orientations[2].0, 2);
+    if x > y {
+        std::mem::swap(&mut x, &mut y);
+    }
+    if y > z {
+        std::mem::swap(&mut y, &mut z);
+    }
+    if x > y {
+        std::mem::swap(&mut x, &mut y);
+    }
+
+    let mut axes = arr.raw_dim();
+    axes[0] = x.1;
+    axes[1] = y.1;
+    axes[2] = z.1;
+    arr.permuted_axes(axes)
 }
 
 /// Affine transform reversing transforms implied in `orientations`

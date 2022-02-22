@@ -12,16 +12,20 @@ license = "BSD-2-Clause"
 edition = "2018"
 
 [features]
-nifti_images = ["nifti"]
+nifti_images = ["ndarray", "nifti"]
 
 [dev-dependencies]
 docopt = "1.1"
-rand = { version = "0.8", default-features = false, features = ["small_rng"] }
+rand = { version = "0.8", default-features = false, features = ["alloc", "getrandom", "small_rng"] }
 tempfile = "3.2"
 
 [dependencies]
 byteorder = "1.4"
 nalgebra = "0.27"
+
+[dependencies.ndarray]
+version = "0.15"
+optional = true
 
 [dependencies.nifti]
 version = "0.14"
