@@ -20,14 +20,18 @@ all copies or substantial portions of the Software. */
 /* The ideas in this file were taken from the NiBabel project, which is MIT
 licensed. The port to Rust has been done by:
 
-Copyright (c) 2017-2018 Nil Goyette <nil.goyette@gmail.com>
+Copyright (c) 2017-2022 Nil Goyette <nil.goyette@gmail.com>
 */
 
 use nalgebra::{RowVector3, Vector4};
+#[cfg(feature = "nifti_images")]
+use ndarray::{ArrayBase, Axis, DataMut, Dimension, Zip};
+#[cfg(feature = "nifti_images")]
+use nifti::DataElement;
 
 use crate::{Affine, Affine4, Translation};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Direction {
     Normal,
     Reversed,
@@ -60,7 +64,7 @@ pub fn affine_to_axcodes(affine: &Affine) -> String {
 /// The calculated orientations can be used to transform associated arrays to
 /// best match the output orientations. If `p` > `q`, then some of the output
 /// axes should be considered dropped in this orientation.
-fn io_orientations(affine: &Affine) -> Orientations {
+pub fn io_orientations(affine: &Affine) -> Orientations {
     // Extract the underlying rotation, zoom, shear matrix
     let rzs2 = affine.component_mul(affine);
     let mut zooms = RowVector3::new(
@@ -132,7 +136,7 @@ fn io_orientations(affine: &Affine) -> Orientations {
 }
 
 /// Convert orientation `orientations` to labels for axis directions
-fn orientations_to_axcodes(orientations: Orientations) -> String {
+pub fn orientations_to_axcodes(orientations: Orientations) -> String {
     let labels = [
         ("L".to_string(), "R".to_string()),
         ("P".to_string(), "A".to_string()),
@@ -190,6 +194,52 @@ pub fn orientations_transform(
         }
     }
     result
+}
+
+#[cfg(feature = "nifti_images")]
+/// Apply transformations implied by `orientations` to the first n axes of the array `arr`.
+pub fn apply_orientation<S, A, D>(
+    mut arr: ArrayBase<S, D>,
+    orientations: Orientations,
+) -> ArrayBase<S, D>
+where
+    S: DataMut<Elem = A>,
+    A: DataElement,
+    D: Dimension,
+{
+    // Apply orientation transformations
+    for (axis, &(_, direction)) in orientations.iter().enumerate() {
+        if direction == Direction::Reversed {
+            Zip::from(arr.lanes_mut(Axis(axis))).for_each(|mut arr| {
+                let n = arr.len();
+                for i in 0..n / 2 {
+                    let tmp = arr[n - 1 - i];
+                    arr[n - 1 - i] = arr[i];
+                    arr[i] = tmp;
+                }
+            });
+        }
+    }
+
+    // Orientation indicates the transpose that has occurred - we reverse it
+    let mut x = (orientations[0].0, 0);
+    let mut y = (orientations[1].0, 1);
+    let mut z = (orientations[2].0, 2);
+    if x > y {
+        std::mem::swap(&mut x, &mut y);
+    }
+    if y > z {
+        std::mem::swap(&mut y, &mut z);
+    }
+    if x > y {
+        std::mem::swap(&mut x, &mut y);
+    }
+
+    let mut axes = arr.raw_dim();
+    axes[0] = x.1;
+    axes[1] = y.1;
+    axes[2] = z.1;
+    arr.permuted_axes(axes)
 }
 
 /// Affine transform reversing transforms implied in `orientations`
@@ -309,5 +359,74 @@ mod tests {
             ),
             [(1, Direction::Reversed), (2, Direction::Normal), (0, Direction::Normal)]
         );
+    }
+
+    #[cfg(feature = "nifti_images")]
+    #[test]
+    fn test_apply_orientation() {
+        use ndarray::{arr3, Array1, Array4};
+
+        let arr = (0..24).collect::<Array1<_>>().into_shape((2, 3, 4)).unwrap();
+        let lsp_to_las = [(0, Direction::Normal), (2, Direction::Normal), (1, Direction::Reversed)];
+        assert_eq!(
+            apply_orientation(arr.clone(), lsp_to_las),
+            arr3(&[
+                [[3, 7, 11], [2, 6, 10], [1, 5, 9], [0, 4, 8]],
+                [[15, 19, 23], [14, 18, 22], [13, 17, 21], [12, 16, 20]],
+            ])
+        );
+        let lsp_to_psr = [(2, Direction::Reversed), (1, Direction::Normal), (0, Direction::Normal)];
+        assert_eq!(
+            apply_orientation(arr.clone(), lsp_to_psr),
+            arr3(&[
+                [[12, 0], [16, 4], [20, 8]],
+                [[13, 1], [17, 5], [21, 9]],
+                [[14, 2], [18, 6], [22, 10]],
+                [[15, 3], [19, 7], [23, 11]],
+            ])
+        );
+        let lsp_to_ilp = [(1, Direction::Normal), (0, Direction::Reversed), (2, Direction::Normal)];
+        assert_eq!(
+            apply_orientation(arr.clone(), lsp_to_ilp),
+            arr3(&[
+                [[8, 9, 10, 11], [20, 21, 22, 23]],
+                [[4, 5, 6, 7], [16, 17, 18, 19]],
+                [[0, 1, 2, 3], [12, 13, 14, 15]],
+            ])
+        );
+
+        let psr_to_las =
+            [(1, Direction::Reversed), (2, Direction::Normal), (0, Direction::Reversed)];
+        assert_eq!(
+            apply_orientation(arr.clone(), psr_to_las),
+            arr3(&[
+                [[15, 19, 23], [3, 7, 11]],
+                [[14, 18, 22], [2, 6, 10]],
+                [[13, 17, 21], [1, 5, 9]],
+                [[12, 16, 20], [0, 4, 8]],
+            ])
+        );
+        let psr_to_psr = [(0, Direction::Normal), (1, Direction::Normal), (2, Direction::Normal)];
+        assert_eq!(apply_orientation(arr.clone(), psr_to_psr), arr);
+        let psr_to_ilp =
+            [(2, Direction::Normal), (0, Direction::Reversed), (1, Direction::Reversed)];
+        let gt = arr3(&[
+            [[11, 23], [10, 22], [9, 21], [8, 20]],
+            [[7, 19], [6, 18], [5, 17], [4, 16]],
+            [[3, 15], [2, 14], [1, 13], [0, 12]],
+        ]);
+        assert_eq!(apply_orientation(arr.clone(), psr_to_ilp), gt);
+
+        // 4D test. The 4th axis should never be reoriented.
+        let arr = arr.mapv(|v| v as f32);
+        let gt = gt.mapv(|v| v as f32);
+        let mut arr4 = Array4::<f32>::zeros((2, 3, 4, 3));
+        for mut volume in arr4.axis_iter_mut(Axis(3)) {
+            volume.assign(&arr);
+        }
+        let answer = apply_orientation(arr4, psr_to_ilp);
+        for volume in answer.axis_iter(Axis(3)) {
+            assert_eq!(volume, gt);
+        }
     }
 }
