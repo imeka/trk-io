@@ -239,6 +239,9 @@ where
     axes[0] = x.1;
     axes[1] = y.1;
     axes[2] = z.1;
+    for i in 3..arr.ndim() {
+        axes[i] = i;
+    }
     arr.permuted_axes(axes)
 }
 
@@ -420,7 +423,7 @@ mod tests {
         // 4D test. The 4th axis should never be reoriented.
         let arr = arr.mapv(|v| v as f32);
         let gt = gt.mapv(|v| v as f32);
-        let mut arr4 = Array4::<f32>::zeros((2, 3, 4, 3));
+        let mut arr4 = Array4::<f32>::zeros((2, 3, 4, 10));
         for mut volume in arr4.axis_iter_mut(Axis(3)) {
             volume.assign(&arr);
         }
