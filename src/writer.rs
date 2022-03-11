@@ -100,6 +100,18 @@ impl Writer {
         Ok(Writer { writer, affine4, affine, translation, real_n_count: 0, nb_scalars })
     }
 
+    /// Resets the affine so that no transformation is applied to the points.
+    ///
+    /// The TrackVis header (on disk) will NOT be modified.
+    pub fn reset_affine(&mut self) {
+        self.affine4 = Affine4::identity();
+        self.affine = Affine::identity();
+        self.translation = Translation::zeros();
+    }
+
+    /// Applies a new affine over the current affine.
+    ///
+    /// The TrackVis header (on disk) will NOT be modified.
     pub fn apply_affine(&mut self, affine: &Affine4) {
         self.affine4 = self.affine4 * affine;
         let (affine, translation) = get_affine_and_translation(&self.affine4);
