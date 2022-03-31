@@ -1,3 +1,4 @@
+use std::time::Instant;
 use std::{fs::File, path::Path, str};
 
 use docopt::Docopt;
@@ -61,4 +62,19 @@ fn main() {
     assert_eq!(guessed_nb_points, real_nb_points);
     assert_eq!(guessed_nb_scalars, real_nb_scalars);
     assert_eq!(guessed_nb_properties, real_nb_properties);
+
+    let mut reader = Reader::new(args.get_str("<input>")).expect("Read header");
+    let now1 = Instant::now();
+    let _ = reader.read_all();
+    let elapsed1 = now1.elapsed();
+    println!("{}s {}ms", elapsed1.as_secs(), elapsed1.subsec_millis());
+
+    let mut reader = Reader::new(args.get_str("<input>")).expect("Read header");
+    let now2 = Instant::now();
+    let _ = reader.read_all_alloc();
+    let elapsed2 = now2.elapsed();
+    println!("{}s {}ms", elapsed2.as_secs(), elapsed2.subsec_millis());
+
+    let diff = elapsed1 - elapsed2;
+    println!("{}ms OR {}ns", diff.subsec_millis(), diff.subsec_nanos())
 }

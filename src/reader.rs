@@ -61,6 +61,28 @@ impl Reader {
     }
 
     fn read_all_<E: ByteOrder>(&mut self) -> Tractogram {
+        let mut lengths = Vec::new();
+        let mut v = Vec::with_capacity(300);
+        let mut scalars = ArraySequence::with_capacity(300);
+        let mut properties = ArraySequence::with_capacity(300);
+        while let Ok(nb_points) = self.reader.read_i32::<E>() {
+            lengths.push(nb_points as usize);
+            self.read_streamline::<E>(&mut v, &mut scalars, nb_points as usize);
+            self.read_properties_to_arr::<E>(&mut properties);
+        }
+
+        self.float_buffer = vec![];
+        Tractogram::new(Streamlines::new(lengths, v), scalars, properties)
+    }
+
+    pub fn read_all_alloc(&mut self) -> Tractogram {
+        match self.endianness {
+            Endianness::Little => self.read_all_alloc_::<LittleEndian>(),
+            Endianness::Big => self.read_all_alloc_::<BigEndian>(),
+        }
+    }
+
+    fn read_all_alloc_<E: ByteOrder>(&mut self) -> Tractogram {
         let nb_scalars = self.header.scalars_name.len();
         let nb_properties = self.header.properties_name.len();
         let nb_streamlines = self.header.nb_streamlines;
