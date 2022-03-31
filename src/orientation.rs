@@ -20,21 +20,25 @@ all copies or substantial portions of the Software. */
 /* The ideas in this file were taken from the NiBabel project, which is MIT
 licensed. The port to Rust has been done by:
 
-Copyright (c) 2017-2018 Nil Goyette <nil.goyette@gmail.com>
+Copyright (c) 2017-2022 Nil Goyette <nil.goyette@gmail.com>
 */
 
 use nalgebra::{RowVector3, Vector4};
+#[cfg(feature = "nifti_images")]
+use ndarray::{ArrayBase, Axis, DataMut, Dimension, Zip};
+#[cfg(feature = "nifti_images")]
+use nifti::DataElement;
 
 use crate::{Affine, Affine4, Translation};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Direction {
     Normal,
     Reversed,
 }
 
 impl Direction {
-    fn to_f32(&self) -> f32 {
+    pub fn to_f32(&self) -> f32 {
         if *self == Direction::Normal {
             1.0
         } else {
@@ -60,7 +64,7 @@ pub fn affine_to_axcodes(affine: &Affine) -> String {
 /// The calculated orientations can be used to transform associated arrays to
 /// best match the output orientations. If `p` > `q`, then some of the output
 /// axes should be considered dropped in this orientation.
-fn io_orientations(affine: &Affine) -> Orientations {
+pub fn io_orientations(affine: &Affine) -> Orientations {
     // Extract the underlying rotation, zoom, shear matrix
     let rzs2 = affine.component_mul(affine);
     let mut zooms = RowVector3::new(
@@ -131,45 +135,45 @@ fn io_orientations(affine: &Affine) -> Orientations {
     orientations
 }
 
-/// Convert orientation `orientations` to labels for axis directions
-fn orientations_to_axcodes(orientations: Orientations) -> String {
-    let labels = [
-        ("L".to_string(), "R".to_string()),
-        ("P".to_string(), "A".to_string()),
-        ("I".to_string(), "S".to_string()),
-    ];
-
+/// Convert `orientations` to labels for axis directions
+///
+/// The "identity" orientation is RAS. Thus, calling this function with
+///
+/// `[(0, Direction::Normal), (1, Direction::Normal), (2, Direction::Normal)]`
+///
+/// would return "RAS".
+pub fn orientations_to_axcodes(orientations: Orientations) -> String {
+    let labels = [['R', 'L'], ['A', 'P'], ['S', 'I']];
     orientations
-        .iter()
-        .map(|&(ref axis, ref direction)| {
-            if *direction == Direction::Normal {
-                labels[*axis].1.clone()
-            } else {
-                labels[*axis].0.clone()
-            }
-        })
-        .collect::<Vec<_>>()
-        .join("")
+        .into_iter()
+        .map(|(axis, direction)| labels[axis][(direction == Direction::Reversed) as usize])
+        .collect()
 }
 
 /// Convert axis codes `axcodes` to an orientation
+///
+/// The "identity" orientation is RAS. Thus, calling this function with "RAS" would return
+///
+/// `[(0, Direction::Normal), (1, Direction::Normal), (2, Direction::Normal)]`
+///
+/// If the caller has a different default orientation, like LAS, he must reverse the `Direction` of
+/// the `0` axis.
 pub fn axcodes_to_orientations(axcodes: &str) -> Orientations {
-    let labels = [('L', 'R'), ('P', 'A'), ('I', 'S')];
+    let labels = [('R', 'L'), ('A', 'P'), ('S', 'I')];
     let mut orientations = [(0, Direction::Normal), (0, Direction::Normal), (0, Direction::Normal)];
     for (code_idx, code) in axcodes.chars().enumerate() {
         for (label_idx, codes) in labels.iter().enumerate() {
             if code == codes.0 {
-                orientations[code_idx] = (label_idx, Direction::Reversed);
-            } else if code == codes.1 {
                 orientations[code_idx] = (label_idx, Direction::Normal);
+            } else if code == codes.1 {
+                orientations[code_idx] = (label_idx, Direction::Reversed);
             }
         }
     }
     orientations
 }
 
-/// Return the orientation that transforms from `start_orientations` to
-/// `end_orientations`
+/// Return the orientation that transforms from `start_orientations` to `end_orientations`.
 pub fn orientations_transform(
     start_orientations: &Orientations,
     end_orientations: &Orientations,
@@ -190,6 +194,56 @@ pub fn orientations_transform(
         }
     }
     result
+}
+
+#[cfg(feature = "nifti_images")]
+/// Apply transformations implied by `orientations` to the first n axes of the array `arr`.
+pub fn apply_orientation<S, A, D>(
+    mut arr: ArrayBase<S, D>,
+    orientations: Orientations,
+) -> ArrayBase<S, D>
+where
+    S: DataMut<Elem = A>,
+    A: DataElement,
+    D: Dimension,
+{
+    // Apply orientation transformations
+    for (axis, &(_, direction)) in orientations.iter().enumerate() {
+        if direction == Direction::Reversed {
+            Zip::from(arr.lanes_mut(Axis(axis))).for_each(|mut arr| {
+                let n = arr.len();
+                for i in 0..n / 2 {
+                    let tmp = arr[n - 1 - i];
+                    arr[n - 1 - i] = arr[i];
+                    arr[i] = tmp;
+                }
+            });
+        }
+    }
+
+    // Orientation indicates the transpose that has occurred - we reverse it
+    // The following block is simply an argsort of 3 numbers.
+    let mut x = (orientations[0].0, 0);
+    let mut y = (orientations[1].0, 1);
+    let mut z = (orientations[2].0, 2);
+    if x > y {
+        std::mem::swap(&mut x, &mut y);
+    }
+    if y > z {
+        std::mem::swap(&mut y, &mut z);
+    }
+    if x > y {
+        std::mem::swap(&mut x, &mut y);
+    }
+
+    let mut axes = arr.raw_dim();
+    axes[0] = x.1;
+    axes[1] = y.1;
+    axes[2] = z.1;
+    for i in 3..arr.ndim() {
+        axes[i] = i;
+    }
+    arr.permuted_axes(axes)
 }
 
 /// Affine transform reversing transforms implied in `orientations`
@@ -222,92 +276,4 @@ pub fn inverse_orientations_affine(orientations: &Orientations, dim: [i16; 3]) -
     undo_flip[(2, 3)] = undo_flip[(2, 2)] * center[2] - center[2];
 
     undo_flip * undo_reorder
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_affine_to_axcodes() {
-        assert_eq!(affine_to_axcodes(&Affine::identity()), "RAS".to_string());
-
-        let affine = Affine::new(0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-        assert_eq!(affine_to_axcodes(&affine), "PRS".to_string());
-        assert_eq!(affine_to_axcodes(&affine), "PRS".to_string());
-    }
-
-    #[test]
-    fn test_axcodes_to_orientations() {
-        assert_eq!(
-            axcodes_to_orientations("RAS"),
-            [(0, Direction::Normal), (1, Direction::Normal), (2, Direction::Normal)]
-        );
-        assert_eq!(
-            axcodes_to_orientations("LPI"),
-            [(0, Direction::Reversed), (1, Direction::Reversed), (2, Direction::Reversed)]
-        );
-        assert_eq!(
-            axcodes_to_orientations("SAR"),
-            [(2, Direction::Normal), (1, Direction::Normal), (0, Direction::Normal)]
-        );
-        assert_eq!(
-            axcodes_to_orientations("AIR"),
-            [(1, Direction::Normal), (2, Direction::Reversed), (0, Direction::Normal)]
-        );
-    }
-
-    #[test]
-    fn test_orientations_to_axcodes() {
-        assert_eq!(
-            orientations_to_axcodes([
-                (0, Direction::Normal),
-                (1, Direction::Normal),
-                (2, Direction::Normal)
-            ]),
-            "RAS"
-        );
-        assert_eq!(
-            orientations_to_axcodes([
-                (0, Direction::Reversed),
-                (1, Direction::Reversed),
-                (2, Direction::Reversed)
-            ]),
-            "LPI"
-        );
-        assert_eq!(
-            orientations_to_axcodes([
-                (2, Direction::Reversed),
-                (1, Direction::Reversed),
-                (0, Direction::Reversed)
-            ]),
-            "IPL"
-        );
-        assert_eq!(
-            orientations_to_axcodes([
-                (1, Direction::Normal),
-                (2, Direction::Reversed),
-                (0, Direction::Normal)
-            ]),
-            "AIR"
-        );
-    }
-
-    #[test]
-    fn test_orientations_transform() {
-        assert_eq!(
-            orientations_transform(
-                &[(0, Direction::Normal), (1, Direction::Normal), (2, Direction::Reversed)],
-                &[(1, Direction::Normal), (0, Direction::Normal), (2, Direction::Normal)]
-            ),
-            [(1, Direction::Normal), (0, Direction::Normal), (2, Direction::Reversed)]
-        );
-        assert_eq!(
-            orientations_transform(
-                &[(0, Direction::Normal), (1, Direction::Normal), (2, Direction::Normal)],
-                &[(2, Direction::Normal), (0, Direction::Reversed), (1, Direction::Normal)]
-            ),
-            [(1, Direction::Reversed), (2, Direction::Normal), (0, Direction::Normal)]
-        );
-    }
 }

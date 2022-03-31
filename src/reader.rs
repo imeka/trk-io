@@ -5,6 +5,7 @@ use std::{
 };
 
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
+use nalgebra::Vector3;
 
 use crate::{
     cheader::Endianness,
@@ -51,6 +52,15 @@ impl Reader {
             nb_floats_per_point,
             float_buffer: Vec::with_capacity(300),
         })
+    }
+
+    /// Modifies the affine in order to read all streamlines in voxel space.
+    ///
+    /// If you do not call this function, all streamlines will be read in world space.
+    pub fn to_voxel_space(&mut self, spacing: Vector3<f32>) {
+        self.affine_to_rasmm =
+            Affine::from_diagonal(&Vector3::new(1.0 / spacing.x, 1.0 / spacing.y, 1.0 / spacing.z));
+        self.translation = Translation::zeros();
     }
 
     pub fn read_all(&mut self) -> Tractogram {
