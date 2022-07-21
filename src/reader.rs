@@ -20,6 +20,7 @@ pub struct Reader {
     pub affine_to_rasmm: Affine,
     pub translation: Translation,
 
+    nb_bytes: usize,
     nb_scalars: usize,
     nb_properties: usize,
     nb_floats_per_point: usize,
@@ -28,7 +29,10 @@ pub struct Reader {
 
 impl Reader {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Reader> {
-        let mut reader = BufReader::new(File::open(&path)?);
+        let f = File::open(&path)?;
+        let nb_bytes = f.metadata().unwrap().len() as usize;
+
+        let mut reader = BufReader::new(f);
         let (header, endianness) = Header::read(&mut reader)?;
         let affine_to_rasmm = header.affine_to_rasmm;
         let translation = header.translation;
@@ -42,6 +46,7 @@ impl Reader {
             header,
             affine_to_rasmm,
             translation,
+            nb_bytes,
             nb_scalars,
             nb_properties,
             nb_floats_per_point,
@@ -66,11 +71,45 @@ impl Reader {
     }
 
     fn read_all_<E: ByteOrder>(&mut self) -> Tractogram {
-        // TODO Anything we can do to reerve?
         let mut lengths = Vec::new();
         let mut v = Vec::with_capacity(300);
         let mut scalars = ArraySequence::with_capacity(300);
         let mut properties = ArraySequence::with_capacity(300);
+        while let Ok(nb_points) = self.reader.read_i32::<E>() {
+            lengths.push(nb_points as usize);
+            self.read_streamline::<E>(&mut v, &mut scalars, nb_points as usize);
+            self.read_properties_to_arr::<E>(&mut properties);
+        }
+
+        self.float_buffer = vec![];
+        Tractogram::new(Streamlines::new(lengths, v), scalars, properties)
+    }
+
+    pub fn read_all_alloc(&mut self) -> Tractogram {
+        match self.endianness {
+            Endianness::Little => self.read_all_alloc_::<LittleEndian>(),
+            Endianness::Big => self.read_all_alloc_::<BigEndian>(),
+        }
+    }
+
+    fn read_all_alloc_<E: ByteOrder>(&mut self) -> Tractogram {
+        let nb_scalars = self.header.scalars_name.len();
+        let nb_properties = self.header.properties_name.len();
+        let nb_streamlines = self.header.nb_streamlines;
+        let header_size = self.header.raw_header().hdr_size as usize;
+
+        // We remove the nb_points count and the properties from nb_f32s, se we only have the
+        // points and scalars
+        let guessed_nb_properties = nb_streamlines * nb_properties;
+        let nb_f32s = (self.nb_bytes - header_size) / 4;
+        let nb_f32s = nb_f32s - nb_streamlines - guessed_nb_properties;
+        let guessed_nb_points = nb_f32s / (3 + nb_scalars);
+        let guessed_nb_scalars = nb_f32s - (3 * guessed_nb_points);
+
+        let mut lengths = Vec::with_capacity(nb_streamlines);
+        let mut v = Vec::with_capacity(guessed_nb_points);
+        let mut scalars = ArraySequence::with_capacity(guessed_nb_scalars);
+        let mut properties = ArraySequence::with_capacity(guessed_nb_properties);
         while let Ok(nb_points) = self.reader.read_i32::<E>() {
             lengths.push(nb_points as usize);
             self.read_streamline::<E>(&mut v, &mut scalars, nb_points as usize);
