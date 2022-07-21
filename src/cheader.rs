@@ -211,7 +211,15 @@ impl CHeader {
     fn read_<E: ByteOrder>(reader: &mut BufReader<File>) -> Result<CHeader> {
         let mut header = CHeader::default();
 
+        // Make sure that the file signature (magic number) is right before doing anything else
         reader.read_exact(&mut header.id_string)?;
+        if &header.id_string != b"TRACK\0" {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "Not a TrackVis file (wrong file signature)",
+            ));
+        }
+
         for i in &mut header.dim {
             *i = reader.read_i16::<E>()?;
         }
