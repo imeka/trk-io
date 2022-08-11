@@ -1,3 +1,4 @@
+use anyhow::Result;
 use docopt::Docopt;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 
@@ -12,38 +13,21 @@ Usage:
   trk_subsampler (-v | --version)
 
 Options:
-  -p --percent=<p>  Keep only p% of streamlines. Based on rand.
-  -n --number=<n>   Keep exactly n streamlines. Based on rand.
-  -s --seed=<s>     Make randomness deterministic.
-  -h --help         Show this screen.
-  -v --version      Show version.
+  -p --percent=<p>   Keep only p% of streamlines. Based on rand.
+  -n --number=<n>    Keep exactly n streamlines. Based on rand.
+  -s --seed=<s>      Make randomness deterministic.
+  -h --help          Show this screen.
+  -v --version       Show version.
 ";
 
-fn sampling_write(writer: &mut Writer, reader: Reader, number: usize, rng: &mut SmallRng) {
-    let mut sampled_indices =
-        rand::seq::index::sample(rng, reader.header.nb_streamlines, number).into_vec();
-    sampled_indices.sort();
-
-    let mut reader_iter = reader.into_iter();
-    let mut last = 0;
-    for idx in sampled_indices {
-        writer.write(reader_iter.nth(idx - last).unwrap());
-        last = idx + 1;
-    }
-}
-
-fn main() {
+fn main() -> Result<()> {
     let version = String::from(env!("CARGO_PKG_VERSION"));
     let args = Docopt::new(USAGE)
         .and_then(|dopt| dopt.version(Some(version)).parse())
         .unwrap_or_else(|e| e.exit());
-    let input = std::path::Path::new(args.get_str("<input>"));
-    if !input.exists() {
-        panic!("Input trk '{:?}' doesn't exist.", input);
-    }
 
-    let reader = Reader::new(args.get_str("<input>")).expect("Read header");
-    let mut writer = Writer::new(args.get_str("<output>"), Some(reader.header.clone())).unwrap();
+    let reader = Reader::new(args.get_str("<input>"))?;
+    let mut writer = Writer::new(args.get_str("<output>"), Some(reader.header.clone()))?;
 
     let mut rng = match args.get_str("--seed").parse::<u8>() {
         Ok(seed) => SmallRng::from_seed([seed; 32]),
@@ -78,5 +62,20 @@ fn main() {
         }
     } else {
         panic!("--percent or --number can't be parsed to a positive number");
+    }
+
+    Ok(())
+}
+
+fn sampling_write(writer: &mut Writer, reader: Reader, number: usize, rng: &mut SmallRng) {
+    let mut sampled_indices =
+        rand::seq::index::sample(rng, reader.header.nb_streamlines, number).into_vec();
+    sampled_indices.sort();
+
+    let mut reader_iter = reader.into_iter();
+    let mut last = 0;
+    for idx in sampled_indices {
+        writer.write(reader_iter.nth(idx - last).unwrap());
+        last = idx + 1;
     }
 }
