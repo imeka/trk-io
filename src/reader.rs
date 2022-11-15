@@ -7,7 +7,7 @@ use nalgebra::Vector3;
 use crate::{
     cheader::Endianness,
     tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem},
-    Affine, ArraySequence, Header, Translation,
+    Affine, ArraySequence, Header, Spacing, Translation,
 };
 
 pub struct Reader {
@@ -51,7 +51,7 @@ impl Reader {
     /// Modifies the affine in order to read all streamlines in voxel space.
     ///
     /// If you do not call this function, all streamlines will be read in world space.
-    pub fn to_voxel_space(&mut self, spacing: Vector3<f32>) {
+    pub fn apply_transform_to_voxel_space(&mut self, spacing: Spacing) {
         self.affine_to_rasmm =
             Affine::from_diagonal(&Vector3::new(1.0 / spacing.x, 1.0 / spacing.y, 1.0 / spacing.z));
         self.translation = Translation::zeros();
