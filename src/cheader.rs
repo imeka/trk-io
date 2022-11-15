@@ -61,9 +61,7 @@ pub struct CHeader {
     pub hdr_size: i32,
 }
 
-// TODO Use size_of::<Header>() when possible
-// use std::mem::size_of;
-pub const HEADER_SIZE: usize = 1000;
+pub const HEADER_SIZE: usize = std::mem::size_of::<CHeader>();
 
 impl CHeader {
     #[cfg(feature = "nifti_images")]
@@ -394,5 +392,10 @@ mod tests {
         // empty strings. It's not super practical, but that's the best we can do with such data.
         let scalars = read_names(&vec![0; 80], 3);
         assert_eq!(scalars, vec![String::from(""), String::from(""), String::from("")]);
+    }
+
+    #[test]
+    fn test_header_size() {
+        assert_eq!(HEADER_SIZE, 1000);
     }
 }
