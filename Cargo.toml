@@ -20,6 +20,7 @@ rand = { version = "0.8", default-features = false, features = ["alloc", "getran
 tempfile = "3.2"
 
 [dependencies]
+anyhow = "1.0"
 byteorder = "1.4"
 nalgebra = "0.27"
 

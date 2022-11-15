@@ -1,9 +1,6 @@
-use std::{
-    fs::File,
-    io::{BufWriter, Result},
-    path::Path,
-};
+use std::{fs::File, io::BufWriter, path::Path};
 
+use anyhow::Result;
 use byteorder::WriteBytesExt;
 
 use crate::{

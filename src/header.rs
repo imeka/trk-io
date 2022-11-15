@@ -1,9 +1,6 @@
-use std::{
-    fs::File,
-    io::{BufReader, Result},
-    path::Path,
-};
+use std::{fs::File, io::BufReader, path::Path};
 
+use anyhow::{Context, Result};
 use byteorder::WriteBytesExt;
 #[cfg(feature = "nifti_images")]
 use nifti::NiftiHeader;
@@ -46,7 +43,9 @@ impl Header {
 
     /// Retrieve a trk header, along with its byte order, from a file in the file system.
     pub fn from_trk<P: AsRef<Path>>(path: P) -> Result<Header> {
-        let mut reader = BufReader::new(File::open(&path)?);
+        let f = File::open(path.as_ref())
+            .with_context(|| format!("Failed to load {:?}", path.as_ref()))?;
+        let mut reader = BufReader::new(f);
         let (header, _) = Self::read(&mut reader)?;
         Ok(header)
     }

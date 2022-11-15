@@ -1,9 +1,6 @@
-use std::{
-    fs::File,
-    io::{BufReader, Result},
-    path::Path,
-};
+use std::{fs::File, io::BufReader, path::Path};
 
+use anyhow::{Context, Result};
 use byteorder::{BigEndian, ByteOrder, LittleEndian, ReadBytesExt};
 use nalgebra::Vector3;
 
@@ -28,7 +25,9 @@ pub struct Reader {
 
 impl Reader {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Reader> {
-        let mut reader = BufReader::new(File::open(&path)?);
+        let f = File::open(path.as_ref())
+            .with_context(|| format!("Failed to load {:?}", path.as_ref()))?;
+        let mut reader = BufReader::new(f);
         let (header, endianness) = Header::read(&mut reader)?;
         let affine_to_rasmm = header.affine_to_rasmm;
         let translation = header.translation;
