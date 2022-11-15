@@ -5,6 +5,7 @@ mod header;
 pub mod orientation;
 mod reader;
 mod tractogram;
+mod vs_reader;
 mod writer;
 
 use byteorder::LittleEndian;
@@ -15,6 +16,7 @@ pub use cheader::CHeader;
 pub use header::Header;
 pub use reader::Reader;
 pub use tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem};
+pub use vs_reader::VoxelSpaceReader;
 pub use writer::Writer;
 
 pub type Affine = Matrix3<f32>;
