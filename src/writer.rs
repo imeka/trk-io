@@ -2,11 +2,12 @@ use std::{fs::File, io::BufWriter, path::Path};
 
 use anyhow::Result;
 use byteorder::WriteBytesExt;
+use nalgebra::Vector4;
 
 use crate::{
     affine::get_affine_and_translation,
     tractogram::{Point, RefTractogramItem, Tractogram, TractogramItem},
-    Affine, Affine4, CHeader, Header, Translation, TrkEndianness,
+    Affine, Affine4, CHeader, Header, Spacing, Translation, TrkEndianness,
 };
 
 macro_rules! write_streamline {
@@ -95,6 +96,17 @@ impl Writer {
         let (affine, translation) = get_affine_and_translation(&affine4);
 
         Ok(Writer { writer, affine4, affine, translation, real_n_count: 0, nb_scalars })
+    }
+
+    /// Modifies the affine in order to write all streamlines from voxel space to the right
+    /// coordinate space on disk.
+    ///
+    /// The resulting file will only valid if the streamlines were read using
+    /// `apply_transform_to_voxel_space`.
+    pub fn apply_transform_from_voxel_space(&mut self, spacing: Spacing) {
+        self.affine = Affine::from_diagonal(&spacing);
+        self.affine4 = Affine4::from_diagonal(&Vector4::new(spacing.x, spacing.y, spacing.z, 1.0));
+        self.translation = Translation::zeros();
     }
 
     /// Resets the affine so that no transformation is applied to the points.
