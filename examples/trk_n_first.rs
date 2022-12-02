@@ -36,8 +36,8 @@ fn main() -> Result<()> {
     let upto = args.get_str("--upto").parse::<usize>().unwrap_or(std::usize::MAX);
     let first_part = upto / 2;
 
-    let reader = Reader::new(args.get_str("<input>"))?;
-    for (i, (streamline, _, _)) in reader.into_iter().enumerate() {
+    let reader = Reader::new(args.get_str("<input>"))?.streamlines();
+    for (i, streamline) in reader.into_iter().enumerate() {
         let len = streamline.len();
         if len > upto {
             streamline[0..first_part].iter().for_each(&print);

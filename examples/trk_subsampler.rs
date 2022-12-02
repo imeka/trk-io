@@ -36,9 +36,9 @@ fn main() -> Result<()> {
 
     if let Ok(percent) = args.get_str("--percent").parse::<f32>() {
         let percent = percent / 100.0;
-        for streamline in reader.into_iter() {
+        for item in reader {
             if rng.gen::<f32>() < percent {
-                writer.write(streamline);
+                writer.write(item);
             }
         }
     } else if let Ok(nb) = args.get_str("--number").parse::<usize>() {
@@ -56,7 +56,7 @@ fn main() -> Result<()> {
                 nb
             );
 
-            reader.into_iter().for_each(|streamline| writer.write(streamline));
+            reader.into_iter().for_each(|item| writer.write(item));
         } else {
             sampling_write(&mut writer, reader, number, &mut rng);
         }
