@@ -9,6 +9,8 @@ This will add 3 scalars (color_x, color_y, color_z) per point. Please note that 
 orientation may be useless as some programs already use this method by default to color the
 streamlines.
 
+The valid range for the `uniform` option is [0, 255], thus red is `255, 0, 0`.
+
 Usage:
   trk_color uniform <r> <g> <b> <input> <output> [options]
   trk_color local <input> <output> [options]
@@ -33,9 +35,9 @@ fn main() -> Result<()> {
     header.add_scalar("color_z")?;
 
     if args.get_bool("uniform") {
-        let r = args.get_str("<r>").parse::<f32>()?;
-        let g = args.get_str("<g>").parse::<f32>()?;
-        let b = args.get_str("<b>").parse::<f32>()?;
+        let r = args.get_str("<r>").parse::<u32>()?;
+        let g = args.get_str("<g>").parse::<u32>()?;
+        let b = args.get_str("<b>").parse::<u32>()?;
         uniform(reader, header, args.get_str("<output>"), r, g, b);
     } else if args.get_bool("local") {
         local(reader, header, args.get_str("<output>"));
@@ -44,7 +46,8 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn uniform(reader: Reader, header: Header, write_to: &str, r: f32, g: f32, b: f32) {
+fn uniform(reader: Reader, header: Header, write_to: &str, r: u32, g: u32, b: u32) {
+    let (r, g, b) = (r as f32, g as f32, b as f32);
     let mut writer = Writer::new(write_to, Some(header)).unwrap();
     for (streamline, mut scalars, properties) in reader.into_iter() {
         for _ in 0..streamline.len() {
