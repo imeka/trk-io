@@ -75,7 +75,11 @@ pub fn io_orientations(affine: &Affine) -> Orientations {
 
     // Zooms can be zero, in which case all elements in the column are zero,
     // and we can leave them as they are
-    zooms.apply(|z| if z == 0.0 { 1.0 } else { z });
+    zooms.apply(|z| {
+        if *z == 0.0 {
+            *z = 1.0
+        }
+    });
 
     #[rustfmt::skip]
     let rs = Affine::new(

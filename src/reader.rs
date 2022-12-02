@@ -57,6 +57,11 @@ impl Reader {
         self.translation = Translation::zeros();
     }
 
+    /// Iterates only on streamlines (`Vec<Point>`), ignoring scalars and properties.
+    pub fn streamlines(self) -> StreamlinesIter {
+        StreamlinesIter { reader: self }
+    }
+
     pub fn read_all(&mut self) -> Tractogram {
         match self.endianness {
             Endianness::Little => self.read_all_::<LittleEndian>(),
@@ -103,6 +108,24 @@ impl Reader {
         scalars.end_push();
     }
 
+    /// Ignore the scalars and properties.
+    ///
+    /// `points` must have the exact capacity as the number of points to read.
+    fn read_streamline_fast<E: ByteOrder>(&mut self, points: &mut Points) {
+        let nb_floats = points.capacity() * self.nb_floats_per_point;
+        self.float_buffer.resize(nb_floats as usize, 0.0);
+        self.reader.read_f32_into::<E>(self.float_buffer.as_mut_slice()).unwrap();
+
+        for floats in self.float_buffer.chunks(self.nb_floats_per_point) {
+            let p = Point::new(floats[0], floats[1], floats[2]);
+            points.push((self.affine_to_rasmm * p) + self.translation);
+        }
+
+        for _ in 0..self.nb_properties {
+            self.reader.read_f32::<E>().unwrap();
+        }
+    }
+
     fn read_properties_to_arr<E: ByteOrder>(&mut self, properties: &mut ArraySequence<f32>) {
         for _ in 0..self.nb_properties {
             properties.push(self.reader.read_f32::<E>().unwrap());
@@ -115,34 +138,57 @@ impl Reader {
             properties.push(self.reader.read_f32::<E>().unwrap());
         }
     }
+
+    fn read_nb_points(&mut self) -> Option<usize> {
+        match self.endianness {
+            Endianness::Little => self.reader.read_i32::<LittleEndian>(),
+            Endianness::Big => self.reader.read_i32::<BigEndian>(),
+        }
+        .ok()
+        .map(|nb_points| nb_points as usize)
+    }
 }
 
 impl Iterator for Reader {
     type Item = TractogramItem;
 
     fn next(&mut self) -> Option<TractogramItem> {
-        if let Ok(nb_points) = match self.endianness {
-            Endianness::Little => self.reader.read_i32::<LittleEndian>(),
-            Endianness::Big => self.reader.read_i32::<BigEndian>(),
-        } {
-            let nb_points = nb_points as usize;
-            let mut streamline = Vec::with_capacity(nb_points);
-            let mut scalars = ArraySequence::with_capacity(nb_points * self.nb_scalars);
-            let mut properties = Vec::with_capacity(self.nb_properties);
-            match self.endianness {
-                Endianness::Little => {
-                    self.read_streamline::<LittleEndian>(&mut streamline, &mut scalars, nb_points);
-                    self.read_properties_to_vec::<LittleEndian>(&mut properties);
-                }
-                Endianness::Big => {
-                    self.read_streamline::<BigEndian>(&mut streamline, &mut scalars, nb_points);
-                    self.read_properties_to_vec::<BigEndian>(&mut properties);
-                }
-            };
+        let nb_points = self.read_nb_points()?;
+        let mut streamline = Vec::with_capacity(nb_points);
+        let mut scalars = ArraySequence::with_capacity(nb_points * self.nb_scalars);
+        let mut properties = Vec::with_capacity(self.nb_properties);
+        match self.endianness {
+            Endianness::Little => {
+                self.read_streamline::<LittleEndian>(&mut streamline, &mut scalars, nb_points);
+                self.read_properties_to_vec::<LittleEndian>(&mut properties);
+            }
+            Endianness::Big => {
+                self.read_streamline::<BigEndian>(&mut streamline, &mut scalars, nb_points);
+                self.read_properties_to_vec::<BigEndian>(&mut properties);
+            }
+        };
+        Some((streamline, scalars, properties))
+    }
+}
 
-            Some((streamline, scalars, properties))
-        } else {
-            None
-        }
+pub struct StreamlinesIter {
+    reader: Reader,
+}
+
+impl Iterator for StreamlinesIter {
+    type Item = Points;
+
+    fn next(&mut self) -> Option<Points> {
+        let nb_points = self.reader.read_nb_points()?;
+        let mut streamline = Vec::with_capacity(nb_points);
+        match self.reader.endianness {
+            Endianness::Little => {
+                self.reader.read_streamline_fast::<LittleEndian>(&mut streamline);
+            }
+            Endianness::Big => {
+                self.reader.read_streamline_fast::<BigEndian>(&mut streamline);
+            }
+        };
+        Some(streamline)
     }
 }
