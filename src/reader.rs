@@ -70,6 +70,14 @@ impl Reader {
         }
     }
 
+    /// Read all points, ignoring the scalars and properties.
+    pub fn points(&mut self) -> Streamlines {
+        match self.endianness {
+            Endianness::Little => self.read_points_::<LittleEndian>(),
+            Endianness::Big => self.read_points_::<BigEndian>(),
+        }
+    }
+
     fn read_tractogram_<E: ByteOrder>(&mut self) -> Tractogram {
         // TODO Anything we can do to reerve?
         let mut lengths = Vec::new();
@@ -84,6 +92,19 @@ impl Reader {
 
         self.float_buffer = vec![];
         Tractogram::new(Streamlines::new(lengths, v), scalars, properties)
+    }
+
+    fn read_points_<E: ByteOrder>(&mut self) -> Streamlines {
+        // TODO Anything we can do to reerve?
+        let mut lengths = Vec::new();
+        let mut v = Vec::with_capacity(300);
+        while let Ok(nb_points) = self.reader.read_i32::<E>() {
+            lengths.push(nb_points as usize);
+            self.read_streamline_fast::<E>(&mut v, nb_points as usize);
+        }
+
+        self.float_buffer = vec![];
+        Streamlines::new(lengths, v)
     }
 
     fn read_streamline<E: ByteOrder>(
@@ -110,10 +131,8 @@ impl Reader {
     }
 
     /// Ignore the scalars and properties.
-    ///
-    /// `points` must have the exact capacity as the number of points to read.
-    fn read_streamline_fast<E: ByteOrder>(&mut self, points: &mut Points) {
-        let nb_floats = points.capacity() * self.nb_floats_per_point;
+    fn read_streamline_fast<E: ByteOrder>(&mut self, points: &mut Points, nb_points: usize) {
+        let nb_floats = nb_points * self.nb_floats_per_point;
         self.float_buffer.resize(nb_floats as usize, 0.0);
         self.reader.read_f32_into::<E>(self.float_buffer.as_mut_slice()).unwrap();
 
@@ -184,10 +203,10 @@ impl Iterator for StreamlinesIter {
         let mut streamline = Vec::with_capacity(nb_points);
         match self.reader.endianness {
             Endianness::Little => {
-                self.reader.read_streamline_fast::<LittleEndian>(&mut streamline);
+                self.reader.read_streamline_fast::<LittleEndian>(&mut streamline, nb_points);
             }
             Endianness::Big => {
-                self.reader.read_streamline_fast::<BigEndian>(&mut streamline);
+                self.reader.read_streamline_fast::<BigEndian>(&mut streamline, nb_points);
             }
         };
         Some(streamline)
