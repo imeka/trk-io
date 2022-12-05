@@ -48,7 +48,7 @@ impl Reader {
         })
     }
 
-    /// Modifies the affine in order to read all streamlines in voxel space.
+    /// Modify the affine in order to read all streamlines in voxel space.
     ///
     /// If you do not call this function, all streamlines will be read in world space.
     pub fn apply_transform_to_voxel_space(&mut self, spacing: Spacing) {
@@ -57,19 +57,20 @@ impl Reader {
         self.translation = Translation::zeros();
     }
 
-    /// Iterates only on streamlines (`Vec<Point>`), ignoring scalars and properties.
+    /// Iterate only on streamlines (`Vec<Point>`), ignoring scalars and properties.
     pub fn streamlines(self) -> StreamlinesIter {
         StreamlinesIter { reader: self }
     }
 
-    pub fn read_all(&mut self) -> Tractogram {
+    /// Read the complete tractogram, that is, all points, scalars and properties, if any.
+    pub fn tractogram(&mut self) -> Tractogram {
         match self.endianness {
-            Endianness::Little => self.read_all_::<LittleEndian>(),
-            Endianness::Big => self.read_all_::<BigEndian>(),
+            Endianness::Little => self.read_tractogram_::<LittleEndian>(),
+            Endianness::Big => self.read_tractogram_::<BigEndian>(),
         }
     }
 
-    fn read_all_<E: ByteOrder>(&mut self) -> Tractogram {
+    fn read_tractogram_<E: ByteOrder>(&mut self) -> Tractogram {
         // TODO Anything we can do to reerve?
         let mut lengths = Vec::new();
         let mut v = Vec::with_capacity(300);

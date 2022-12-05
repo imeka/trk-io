@@ -13,5 +13,5 @@ pub fn get_random_trk_path() -> String {
 
 pub fn load_trk(path: &str) -> (Header, Tractogram) {
     let mut reader = Reader::new(path).unwrap();
-    (reader.header.clone(), reader.read_all())
+    (reader.header.clone(), reader.tractogram())
 }

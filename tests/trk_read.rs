@@ -4,7 +4,7 @@ use trk_io::{Affine, ArraySequence, Header, Point, Reader, Tractogram, Translati
 #[test]
 fn test_load_empty() {
     let Tractogram { streamlines, scalars, properties } =
-        Reader::new("data/empty.trk").unwrap().read_all();
+        Reader::new("data/empty.trk").unwrap().tractogram();
 
     assert_eq!(streamlines.len(), 0);
     assert!(scalars.is_empty());
@@ -28,7 +28,7 @@ fn test_load_simple() {
     ];
 
     let Tractogram { streamlines, scalars, properties } =
-        Reader::new("data/simple.trk").unwrap().read_all();
+        Reader::new("data/simple.trk").unwrap().tractogram();
 
     assert_eq!(streamlines.len(), 3);
     assert_eq!(streamlines[0], first);
@@ -55,7 +55,7 @@ fn test_load_simple() {
 #[test]
 fn test_load_standard() {
     let mut reader = Reader::new("data/standard.trk").unwrap();
-    let Tractogram { streamlines, scalars, properties } = reader.read_all();
+    let Tractogram { streamlines, scalars, properties } = reader.tractogram();
 
     assert_eq!(reader.affine_to_rasmm, Affine::identity());
     assert_eq!(reader.translation, Translation::new(-0.5, -1.5, -1.0));
@@ -82,7 +82,7 @@ fn test_load_standard() {
 #[test]
 fn test_load_standard_lps() {
     let mut reader = Reader::new("data/standard.LPS.trk").unwrap();
-    let Tractogram { streamlines, scalars, properties } = reader.read_all();
+    let Tractogram { streamlines, scalars, properties } = reader.tractogram();
     #[rustfmt::skip]
     assert_eq!(reader.affine_to_rasmm, Affine::from_diagonal(&Vector3::new(-1.0, -1.0, 1.0)));
     assert_eq!(reader.translation, Translation::new(3.5, 13.5, -1.0));
@@ -103,7 +103,7 @@ fn test_load_standard_lps() {
 #[test]
 fn test_load_complex() {
     let mut reader = Reader::new("data/complex.trk").unwrap();
-    let Tractogram { streamlines, scalars, properties } = reader.read_all();
+    let Tractogram { streamlines, scalars, properties } = reader.tractogram();
     assert_eq!(reader.affine_to_rasmm, Affine::identity());
     assert_eq!(reader.translation, Translation::new(-0.5, -0.5, -0.5));
 
@@ -137,7 +137,7 @@ fn test_load_complex_big_endian() {
     ];
 
     let mut reader = Reader::new("data/complex_big_endian.trk").unwrap();
-    let Tractogram { streamlines, scalars, properties } = reader.read_all();
+    let Tractogram { streamlines, scalars, properties } = reader.tractogram();
     assert_eq!(streamlines.len(), 3);
     assert_eq!(streamlines[0], first);
     assert_eq!(streamlines[1], second);
