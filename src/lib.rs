@@ -14,7 +14,7 @@ use nalgebra::{Matrix3, Matrix4, Vector3};
 pub use array_sequence::ArraySequence;
 pub use cheader::CHeader;
 pub use header::Header;
-pub use reader::Reader;
+pub use reader::{Reader, StreamlinesIter};
 pub use tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem};
 pub use vs_reader::VoxelSpaceReader;
 pub use writer::Writer;
