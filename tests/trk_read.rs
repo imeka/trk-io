@@ -38,7 +38,7 @@ fn test_load_simple() {
     assert!(properties.is_empty());
 
     // Test the complete points reading
-    let streamlines = Reader::new("data/simple.trk").unwrap().points();
+    let streamlines = Reader::new("data/simple.trk").unwrap().streamlines();
     assert_eq!(streamlines.len(), 3);
     assert_eq!(streamlines[0], first);
     assert_eq!(streamlines[1], second);
@@ -57,7 +57,7 @@ fn test_load_simple() {
 
     // Test the streamlines generator
     let reader = Reader::new("data/simple.trk").unwrap();
-    for (i, streamline) in reader.streamlines().enumerate() {
+    for (i, streamline) in reader.into_streamlines_iter().enumerate() {
         match i {
             0 => assert_eq!(streamline, first),
             1 => assert_eq!(streamline, second),

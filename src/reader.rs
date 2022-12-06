@@ -58,7 +58,7 @@ impl Reader {
     }
 
     /// Iterate only on streamlines (`Vec<Point>`), ignoring scalars and properties.
-    pub fn streamlines(self) -> StreamlinesIter {
+    pub fn into_streamlines_iter(self) -> StreamlinesIter {
         StreamlinesIter { reader: self }
     }
 
@@ -71,7 +71,7 @@ impl Reader {
     }
 
     /// Read all points, ignoring the scalars and properties.
-    pub fn points(&mut self) -> Streamlines {
+    pub fn streamlines(&mut self) -> Streamlines {
         match self.endianness {
             Endianness::Little => self.read_points_::<LittleEndian>(),
             Endianness::Big => self.read_points_::<BigEndian>(),

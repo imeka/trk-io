@@ -35,7 +35,7 @@ fn main() -> Result<()> {
     let upto = args.get_str("--upto").parse::<usize>().unwrap_or(std::usize::MAX);
     let first_part = upto / 2;
 
-    let reader = Reader::new(args.get_str("<input>"))?.streamlines();
+    let reader = Reader::new(args.get_str("<input>"))?.into_streamlines_iter();
     if args.get_bool("first") {
         // nb - 1 because we don't want to print the last \n
         let nb = args.get_str("<nb>").parse::<usize>()? - 1;
