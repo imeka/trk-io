@@ -1,34 +1,40 @@
+use anyhow::Result;
+
 use trk_io::Header;
 
 #[test]
-fn test_copy_scalars_and_properties() {
+fn test_copy_scalars_and_properties() -> Result<()> {
     let s1 = "s1".to_string();
     let s2 = "s2".to_string();
     let p1 = "p1".to_string();
     let p2 = "p2".to_string();
 
     let mut header1 = Header::default();
-    header1.add_scalar(&s2).unwrap();
-    header1.add_property(&p2).unwrap();
+    header1.add_scalar(&s2)?;
+    header1.add_property(&p2)?;
 
     let mut header2 = Header::default();
-    header2.add_scalar(&s1).unwrap();
-    header2.add_scalar(&s2).unwrap();
-    header2.add_property(&p1).unwrap();
-    header2.add_property(&p2).unwrap();
+    header2.add_scalar(&s1)?;
+    header2.add_scalar(&s2)?;
+    header2.add_property(&p1)?;
+    header2.add_property(&p2)?;
 
     header2.copy_scalars_and_properties(&header1);
     assert_eq!(header2.scalars_name, vec![s2]);
     assert_eq!(header2.properties_name, vec![p2]);
+
+    Ok(())
 }
 
 #[test]
-fn test_add_scalar() {
+fn test_add_scalar() -> Result<()> {
     let torsion = "torsion".to_string();
 
     let mut header = Header::default();
-    header.add_scalar(&torsion).unwrap();
-    assert_eq!(header.scalars_name, vec![torsion])
+    header.add_scalar(&torsion)?;
+    assert_eq!(header.scalars_name, vec![torsion]);
+
+    Ok(())
 }
 
 #[test]
@@ -55,12 +61,14 @@ fn test_unicode_scalar() {
 }
 
 #[test]
-fn test_add_property() {
+fn test_add_property() -> Result<()> {
     let torsion = "torsion".to_string();
 
     let mut header = Header::default();
-    header.add_property(&torsion).unwrap();
-    assert_eq!(header.properties_name, vec![torsion])
+    header.add_property(&torsion)?;
+    assert_eq!(header.properties_name, vec![torsion]);
+
+    Ok(())
 }
 
 #[test]

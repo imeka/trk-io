@@ -3,6 +3,7 @@ mod test;
 #[cfg(feature = "nifti_images")]
 mod nifti_tests {
     use crate::test::{get_random_trk_path, load_trk};
+    use anyhow::Result;
     use nifti::{NiftiObject, ReaderOptions};
     use trk_io::{
         affine::{rasmm_to_trackvis, trackvis_to_rasmm},
@@ -10,13 +11,12 @@ mod nifti_tests {
     };
 
     #[test]
-    fn test_complex_affine() {
-        let header =
-            ReaderOptions::new().read_file("data/complex_affine.nii.gz").unwrap().header().clone();
+    fn test_complex_affine() -> Result<()> {
+        let header = ReaderOptions::new().read_file("data/complex_affine.nii.gz")?.header().clone();
         let write_to = get_random_trk_path();
 
         {
-            let mut writer = Writer::new(&write_to, Some(Header::from_nifti(&header))).unwrap();
+            let mut writer = Writer::new(&write_to, Some(Header::from_nifti(&header)))?;
             writer.apply_affine(&header.affine());
             writer.write(
                 &[
@@ -34,11 +34,13 @@ mod nifti_tests {
         assert_eq!(streamline[0], Point::new(-82.54104, -25.178139, 37.788338));
         assert_eq!(streamline[1], Point::new(-81.933876, -25.032265, 38.850258));
         assert_eq!(streamline[2], Point::new(-81.07349, -24.765305, 39.70571));
+
+        Ok(())
     }
 
     #[test]
-    fn test_qform_affine() {
-        let header = ReaderOptions::new().read_file("data/qform.nii.gz").unwrap().header().clone();
+    fn test_qform_affine() -> Result<()> {
+        let header = ReaderOptions::new().read_file("data/qform.nii.gz")?.header().clone();
         #[rustfmt::skip]
         assert_eq!(
             header.affine(),
@@ -49,6 +51,8 @@ mod nifti_tests {
                 0.0, 0.0, 0.0, 1.0,
             )
         );
+
+        Ok(())
     }
 
     #[test]
@@ -76,9 +80,8 @@ mod nifti_tests {
     }
 
     #[test]
-    fn test_complex_header_from_nifti() {
-        let nifti_header =
-            ReaderOptions::new().read_file("data/3x3.nii.gz").unwrap().header().clone();
+    fn test_complex_header_from_nifti() -> Result<()> {
+        let nifti_header = ReaderOptions::new().read_file("data/3x3.nii.gz")?.header().clone();
         let c_header = CHeader::from_nifti(
             nifti_header.dim,
             nifti_header.pixdim,
@@ -114,12 +117,13 @@ mod nifti_tests {
         assert_eq!(header.nb_streamlines, 0);
         assert_eq!(header.scalars_name.len(), 0);
         assert_eq!(header.properties_name.len(), 0);
+
+        Ok(())
     }
 
     #[test]
-    fn test_complex_affine_from_nifti() {
-        let nifti_header =
-            ReaderOptions::new().read_file("data/3x3.nii.gz").unwrap().header().clone();
+    fn test_complex_affine_from_nifti() -> Result<()> {
+        let nifti_header = ReaderOptions::new().read_file("data/3x3.nii.gz")?.header().clone();
         #[rustfmt::skip]
         assert_eq!(
             trackvis_to_rasmm(&nifti_header),
@@ -140,5 +144,7 @@ mod nifti_tests {
                 0.0, 0.0, 0.0, 1.0,
             )
         );
+
+        Ok(())
     }
 }

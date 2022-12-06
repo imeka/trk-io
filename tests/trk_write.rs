@@ -2,6 +2,8 @@ mod test;
 
 use std::iter::FromIterator;
 
+use anyhow::Result;
+
 use test::{get_random_trk_path, load_trk};
 use trk_io::{Affine4, Point, Reader, Writer};
 
@@ -12,13 +14,13 @@ use trk_io::{Affine4, Point, Reader, Writer};
 // write_from_iter is tested in write_dynamic.
 
 #[test]
-fn test_write_dynamic() {
+fn test_write_dynamic() -> Result<()> {
     let write_to = get_random_trk_path();
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
     // This seemingly useless { scope } is *required* because Writer::drop must be called
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
+        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
         writer.write_from_iter([Point::new(0.0, 1.0, 2.0)].iter().cloned(), 1);
 
         let v = vec![Point::new(0.0, 1.0, 2.0), Point::new(3.0, 4.0, 5.0)];
@@ -31,56 +33,60 @@ fn test_write_dynamic() {
     }
 
     assert!((original_header, original_tractogram) == load_trk(&write_to));
+    Ok(())
 }
 
 #[test]
-fn test_write_empty() {
+fn test_write_empty() -> Result<()> {
     let write_to = get_random_trk_path();
     let (original_header, original_tractogram) = load_trk("data/empty.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
+        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
         writer.write(original_tractogram.clone());
     }
 
     assert!((original_header, original_tractogram) == load_trk(&write_to));
+    Ok(())
 }
 
 #[test]
-fn test_write_simple() {
+fn test_write_simple() -> Result<()> {
     let write_to = get_random_trk_path();
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
+        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
         writer.write(original_tractogram.clone());
     }
 
     assert!((original_header, original_tractogram) == load_trk(&write_to));
+    Ok(())
 }
 
 #[test]
-fn test_write_points_simple() {
+fn test_write_points_simple() -> Result<()> {
     let write_to = get_random_trk_path();
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
+        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
         for streamline in original_tractogram.streamlines.into_iter() {
             writer.write(streamline);
         }
     }
 
     assert!((original_header, original_tractogram) == load_trk(&write_to));
+    Ok(())
 }
 
 #[test]
-fn test_write_tractogram_item_simple() {
+fn test_write_tractogram_item_simple() -> Result<()> {
     let write_to = get_random_trk_path();
-    let reader = Reader::new("data/simple.trk").unwrap();
+    let reader = Reader::new("data/simple.trk")?;
 
     {
-        let mut writer = Writer::new(&write_to, Some(reader.header.clone())).unwrap();
+        let mut writer = Writer::new(&write_to, Some(reader.header.clone()))?;
         for item in reader.into_iter() {
             writer.write(item);
         }
@@ -88,30 +94,32 @@ fn test_write_tractogram_item_simple() {
 
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
     assert!((original_header, original_tractogram) == load_trk(&write_to));
+    Ok(())
 }
 
 #[test]
-fn test_write_ref_tractogram_item_simple() {
+fn test_write_ref_tractogram_item_simple() -> Result<()> {
     let write_to = get_random_trk_path();
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
+        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
         for ref_item in original_tractogram.into_iter() {
             writer.write(ref_item);
         }
     }
 
     assert!((original_header, original_tractogram) == load_trk(&write_to));
+    Ok(())
 }
 
 #[test]
-fn test_write_standard() {
+fn test_write_standard() -> Result<()> {
     let write_to = get_random_trk_path();
     let (original_header, original_tractogram) = load_trk("data/standard.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header)).unwrap();
+        let mut writer = Writer::new(&write_to, Some(original_header))?;
         writer.write(&original_tractogram.streamlines[0]);
         writer.write(&original_tractogram.streamlines[1]);
         writer.write(&original_tractogram.streamlines[2]);
@@ -123,15 +131,16 @@ fn test_write_standard() {
         tractogram.streamlines[0],
         [Point::new(-0.5, -1.5, 1.0), Point::new(0.0, 0.0, 2.0), Point::new(0.5, 1.5, 3.0)]
     );
+    Ok(())
 }
 
 #[test]
-fn test_write_standard_lps() {
+fn test_write_standard_lps() -> Result<()> {
     let write_to = get_random_trk_path();
     let (original_header, original_tractogram) = load_trk("data/standard.LPS.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone())).unwrap();
+        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
         #[rustfmt::skip]
         assert_eq!(
             writer.affine4,
@@ -163,15 +172,16 @@ fn test_write_standard_lps() {
         tractogram.streamlines[0],
         [Point::new(-0.5, -1.5, 1.0), Point::new(0.0, 0.0, 2.0), Point::new(0.5, 1.5, 3.0)]
     );
+    Ok(())
 }
 
 #[test]
-fn test_write_complex() {
+fn test_write_complex() -> Result<()> {
     let write_to = get_random_trk_path();
-    let reader = Reader::new("data/complex.trk").unwrap();
+    let reader = Reader::new("data/complex.trk")?;
 
     {
-        let mut writer = Writer::new(&write_to, Some(reader.header.clone())).unwrap();
+        let mut writer = Writer::new(&write_to, Some(reader.header.clone()))?;
         for item in reader.into_iter() {
             writer.write(item);
         }
@@ -179,4 +189,5 @@ fn test_write_complex() {
 
     let (original_header, original_tractogram) = load_trk("data/complex.trk");
     assert!((original_header, original_tractogram) == load_trk(&write_to));
+    Ok(())
 }
