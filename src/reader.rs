@@ -14,13 +14,9 @@ pub struct Reader {
     reader: BufReader<File>,
     endianness: Endianness,
     pub header: Header,
-    pub affine_to_rasmm: Affine,
-    pub translation: Translation,
 
-    nb_scalars: usize,
-    nb_properties: usize,
-    nb_floats_per_point: usize,
-    float_buffer: Vec<f32>,
+    floats_per_point: usize,
+    buffer: Vec<f32>,
 }
 
 impl Reader {
@@ -29,32 +25,19 @@ impl Reader {
             .with_context(|| format!("Failed to load {:?}", path.as_ref()))?;
         let mut reader = BufReader::new(f);
         let (header, endianness) = Header::read(&mut reader)?;
-        let affine_to_rasmm = header.affine_to_rasmm;
-        let translation = header.translation;
-        let nb_scalars = header.scalars_name.len();
-        let nb_properties = header.properties_name.len();
-        let nb_floats_per_point = 3 + nb_scalars;
+        let floats_per_point = 3 + header.scalars_name.len();
+        let buffer = Vec::with_capacity(300);
 
-        Ok(Reader {
-            reader,
-            endianness,
-            header,
-            affine_to_rasmm,
-            translation,
-            nb_scalars,
-            nb_properties,
-            nb_floats_per_point,
-            float_buffer: Vec::with_capacity(300),
-        })
+        Ok(Reader { reader, endianness, header, floats_per_point, buffer })
     }
 
     /// Modify the affine in order to read all streamlines in voxel space.
     ///
     /// If you do not call this function, all streamlines will be read in world space.
     pub fn apply_transform_to_voxel_space(&mut self, spacing: Spacing) {
-        self.affine_to_rasmm =
+        self.header.affine_to_rasmm =
             Affine::from_diagonal(&Vector3::new(1.0 / spacing.x, 1.0 / spacing.y, 1.0 / spacing.z));
-        self.translation = Translation::zeros();
+        self.header.translation = Translation::zeros();
     }
 
     /// Iterate only on streamlines (`Vec<Point>`), ignoring scalars and properties.
@@ -79,7 +62,7 @@ impl Reader {
     }
 
     fn read_tractogram_<E: ByteOrder>(&mut self) -> Tractogram {
-        // TODO Anything we can do to reerve?
+        // TODO Anything we can do to reserve?
         let mut lengths = Vec::new();
         let mut v = Vec::with_capacity(300);
         let mut scalars = ArraySequence::with_capacity(300);
@@ -90,12 +73,12 @@ impl Reader {
             self.read_properties_to_arr::<E>(&mut properties);
         }
 
-        self.float_buffer = vec![];
+        self.buffer = vec![];
         Tractogram::new(Streamlines::new(lengths, v), scalars, properties)
     }
 
     fn read_points_<E: ByteOrder>(&mut self) -> Streamlines {
-        // TODO Anything we can do to reerve?
+        // TODO Anything we can do to reserve?
         let mut lengths = Vec::new();
         let mut v = Vec::with_capacity(300);
         while let Ok(nb_points) = self.reader.read_i32::<E>() {
@@ -103,7 +86,7 @@ impl Reader {
             self.read_streamline_fast::<E>(&mut v, nb_points as usize);
         }
 
-        self.float_buffer = vec![];
+        self.buffer = vec![];
         Streamlines::new(lengths, v)
     }
 
@@ -113,15 +96,10 @@ impl Reader {
         scalars: &mut ArraySequence<f32>,
         nb_points: usize,
     ) {
-        // Vec::resize never decreases capacity, it can only increase it
-        // so there won't be any useless allocation.
-        let nb_floats = nb_points * self.nb_floats_per_point;
-        self.float_buffer.resize(nb_floats as usize, 0.0);
-        self.reader.read_f32_into::<E>(self.float_buffer.as_mut_slice()).unwrap();
-
-        for floats in self.float_buffer.chunks(self.nb_floats_per_point) {
+        self.read_floats::<E>(nb_points);
+        for floats in self.buffer.chunks(self.floats_per_point) {
             let p = Point::new(floats[0], floats[1], floats[2]);
-            points.push((self.affine_to_rasmm * p) + self.translation);
+            points.push((self.header.affine_to_rasmm * p) + self.header.translation);
 
             for f in &floats[3..] {
                 scalars.push(*f);
@@ -132,29 +110,37 @@ impl Reader {
 
     /// Ignore the scalars and properties.
     fn read_streamline_fast<E: ByteOrder>(&mut self, points: &mut Points, nb_points: usize) {
-        let nb_floats = nb_points * self.nb_floats_per_point;
-        self.float_buffer.resize(nb_floats as usize, 0.0);
-        self.reader.read_f32_into::<E>(self.float_buffer.as_mut_slice()).unwrap();
-
-        for floats in self.float_buffer.chunks(self.nb_floats_per_point) {
+        self.read_floats::<E>(nb_points);
+        for floats in self.buffer.chunks(self.floats_per_point) {
             let p = Point::new(floats[0], floats[1], floats[2]);
-            points.push((self.affine_to_rasmm * p) + self.translation);
+            points.push((self.header.affine_to_rasmm * p) + self.header.translation);
         }
 
-        for _ in 0..self.nb_properties {
+        for _ in 0..self.header.properties_name.len() {
             self.reader.read_f32::<E>().unwrap();
         }
     }
 
+    /// Read all points and scalars for the current streamline.
+    ///
+    /// Simply chunk the result by `nb_floats_per_point` to get the 3D point and the scalars.
+    fn read_floats<E: ByteOrder>(&mut self, nb_points: usize) {
+        // Vec::resize never decreases capacity, it can only increase it so there won't be any
+        // useless allocation.
+        let nb_floats = nb_points * self.floats_per_point;
+        self.buffer.resize(nb_floats, 0.0);
+        self.reader.read_f32_into::<E>(self.buffer.as_mut_slice()).unwrap();
+    }
+
     fn read_properties_to_arr<E: ByteOrder>(&mut self, properties: &mut ArraySequence<f32>) {
-        for _ in 0..self.nb_properties {
+        for _ in 0..self.header.properties_name.len() {
             properties.push(self.reader.read_f32::<E>().unwrap());
         }
         properties.end_push();
     }
 
     fn read_properties_to_vec<E: ByteOrder>(&mut self, properties: &mut Vec<f32>) {
-        for _ in 0..self.nb_properties {
+        for _ in 0..self.header.properties_name.len() {
             properties.push(self.reader.read_f32::<E>().unwrap());
         }
     }
@@ -175,8 +161,8 @@ impl Iterator for Reader {
     fn next(&mut self) -> Option<TractogramItem> {
         let nb_points = self.read_nb_points()?;
         let mut streamline = Vec::with_capacity(nb_points);
-        let mut scalars = ArraySequence::with_capacity(nb_points * self.nb_scalars);
-        let mut properties = Vec::with_capacity(self.nb_properties);
+        let mut scalars = ArraySequence::with_capacity(nb_points * self.header.scalars_name.len());
+        let mut properties = Vec::with_capacity(self.header.properties_name.len());
         match self.endianness {
             Endianness::Little => {
                 self.read_streamline::<LittleEndian>(&mut streamline, &mut scalars, nb_points);
