@@ -15,6 +15,7 @@ pub struct Reader {
     endianness: Endianness,
     pub header: Header,
 
+    raw: bool,
     voxel_space: bool,
 
     floats_per_point: usize,
@@ -33,19 +34,38 @@ impl Reader {
         let floats_per_point = 3 + header.scalars_name.len();
         let buffer = Vec::with_capacity(300);
 
+        let raw = false;
         let voxel_space = false;
 
-        Ok(Reader { reader, endianness, header, voxel_space, floats_per_point, buffer })
+        Ok(Reader { reader, endianness, header, raw, voxel_space, floats_per_point, buffer })
     }
 
     /// Modify the affine in order to read all streamlines in voxel space.
     ///
     /// Once this function is called, it's not possible to revert to reading in world space.
+    ///
+    /// Panics if `raw` has been called.
     pub fn to_voxel_space(mut self, spacing: Spacing) -> Self {
+        if self.raw {
+            panic!("Can't use raw + voxel space reading");
+        }
+
         self.voxel_space = true;
         self.header.affine_to_rasmm =
             Affine::from_diagonal(&Vector3::new(1.0 / spacing.x, 1.0 / spacing.y, 1.0 / spacing.z));
         self.header.translation = Translation::zeros();
+        self
+    }
+
+    /// Read the points as they are written on disk, without any transformation.
+    ///
+    /// Panics if `to_voxel_space` has been called.
+    pub fn raw(mut self) -> Self {
+        if self.voxel_space {
+            panic!("Can't use voxel space + raw reading");
+        }
+
+        self.raw = true;
         self
     }
 
@@ -107,9 +127,7 @@ impl Reader {
     ) {
         self.read_floats::<E>(nb_points);
         for floats in self.buffer.chunks(self.floats_per_point) {
-            let p = Point::new(floats[0], floats[1], floats[2]);
-            points.push((self.header.affine_to_rasmm * p) + self.header.translation);
-
+            self.add_points(points, floats);
             for f in &floats[3..] {
                 scalars.push(*f);
             }
@@ -121,10 +139,11 @@ impl Reader {
     fn read_streamline_fast<E: ByteOrder>(&mut self, points: &mut Points, nb_points: usize) {
         self.read_floats::<E>(nb_points);
         for floats in self.buffer.chunks(self.floats_per_point) {
-            let p = Point::new(floats[0], floats[1], floats[2]);
-            points.push((self.header.affine_to_rasmm * p) + self.header.translation);
+            self.add_points(points, floats);
+            // Scalars have been read in `floats`, but we do not save them
         }
 
+        // Properties must be read to advance the cursor, but we do not save them
         for _ in 0..self.header.properties_name.len() {
             self.reader.read_f32::<E>().unwrap();
         }
@@ -139,6 +158,15 @@ impl Reader {
         let nb_floats = nb_points * self.floats_per_point;
         self.buffer.resize(nb_floats, 0.0);
         self.reader.read_f32_into::<E>(self.buffer.as_mut_slice()).unwrap();
+    }
+
+    #[inline(always)]
+    fn add_points(&self, points: &mut Points, floats: &[f32]) {
+        let mut p = Point::new(floats[0], floats[1], floats[2]);
+        if !self.raw {
+            p = (self.header.affine_to_rasmm * p) + self.header.translation;
+        }
+        points.push(p);
     }
 
     fn read_properties_to_arr<E: ByteOrder>(&mut self, properties: &mut ArraySequence<f32>) {

@@ -45,6 +45,8 @@ pub struct Writer {
     nb_scalars: usize,
 
     real_n_count: i32,
+    raw: bool,
+    voxel_space: bool,
 }
 
 pub trait Writable {
@@ -97,27 +99,58 @@ impl Writer {
         };
         header.write(&mut writer)?;
         let (affine, translation) = get_affine_and_translation(&affine4);
-        let nb_scalars = header.scalars_name.len();
 
-        let real_n_count = 0;
-
-        Ok(Writer { writer, affine4, affine, translation, real_n_count, nb_scalars })
+        Ok(Writer {
+            writer,
+            affine4,
+            affine,
+            translation,
+            real_n_count: 0,
+            nb_scalars: header.scalars_name.len(),
+            raw: false,
+            voxel_space: false,
+        })
     }
 
     /// Modifies the affine in order to write all streamlines from voxel space to the right
     /// coordinate space on disk.
     ///
     /// The resulting file will only valid if the streamlines were read using `to_voxel_space`.
+    ///
+    /// Once this function is called, it's not possible to revert to writing from world space.
+    ///
+    /// Panics if `raw` has been called.
     pub fn from_voxel_space(mut self, spacing: Spacing) -> Self {
+        if self.raw {
+            panic!("Can't use raw + voxel space reading");
+        }
+
+        self.voxel_space = true;
         self.affine = Affine::from_diagonal(&spacing);
         self.affine4 = Affine4::from_diagonal(&Vector4::new(spacing.x, spacing.y, spacing.z, 1.0));
         self.translation = Translation::zeros();
         self
     }
 
+    /// Write the points as they are read on disk, without any transformation.
+    ///
+    /// The resulting file will only valid if the streamlines were read using `raw`.
+    ///
+    /// Calling `reset_affine` or `apply_affine` is not forbidden, but it will have no effect.
+    ///
+    /// Panics if `from_voxel_space` has been called.
+    pub fn raw(mut self) -> Self {
+        if self.voxel_space {
+            panic!("Can't use voxel space + raw reading");
+        }
+
+        self.raw = true;
+        self
+    }
+
     /// Resets the affine so that no transformation is applied to the points.
     ///
-    /// The TrackVis header (on disk) will NOT be modified.
+    /// The TrackVis header (on disk) will **not** be modified.
     pub fn reset_affine(&mut self) {
         self.affine4 = Affine4::identity();
         self.affine = Affine::identity();
@@ -146,7 +179,7 @@ impl Writer {
     }
 
     fn write_point(&mut self, p: &Point) {
-        let p = self.affine * p + self.translation;
+        let p = if self.raw { *p } else { self.affine * p + self.translation };
         self.writer.write_f32::<TrkEndianness>(p.x).unwrap();
         self.writer.write_f32::<TrkEndianness>(p.y).unwrap();
         self.writer.write_f32::<TrkEndianness>(p.z).unwrap();
