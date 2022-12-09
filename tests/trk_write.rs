@@ -20,7 +20,7 @@ fn test_write_dynamic() -> Result<()> {
 
     // This seemingly useless { scope } is *required* because Writer::drop must be called
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
+        let mut writer = Writer::new(&write_to, Some(&original_header))?;
         writer.write_from_iter([Point::new(0.0, 1.0, 2.0)].iter().cloned(), 1);
 
         let v = vec![Point::new(0.0, 1.0, 2.0), Point::new(3.0, 4.0, 5.0)];
@@ -42,7 +42,7 @@ fn test_write_empty() -> Result<()> {
     let (original_header, original_tractogram) = load_trk("data/empty.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
+        let mut writer = Writer::new(&write_to, Some(&original_header))?;
         writer.write(original_tractogram.clone());
     }
 
@@ -56,7 +56,7 @@ fn test_write_simple() -> Result<()> {
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
+        let mut writer = Writer::new(&write_to, Some(&original_header))?;
         writer.write(original_tractogram.clone());
     }
 
@@ -70,7 +70,7 @@ fn test_write_points_simple() -> Result<()> {
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
+        let mut writer = Writer::new(&write_to, Some(&original_header))?;
         for streamline in original_tractogram.streamlines.into_iter() {
             writer.write(streamline);
         }
@@ -86,7 +86,7 @@ fn test_write_tractogram_item_simple() -> Result<()> {
     let reader = Reader::new("data/simple.trk")?;
 
     {
-        let mut writer = Writer::new(&write_to, Some(reader.header.clone()))?;
+        let mut writer = Writer::new(&write_to, Some(&reader.header))?;
         for item in reader.into_iter() {
             writer.write(item);
         }
@@ -103,7 +103,7 @@ fn test_write_ref_tractogram_item_simple() -> Result<()> {
     let (original_header, original_tractogram) = load_trk("data/simple.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
+        let mut writer = Writer::new(&write_to, Some(&original_header))?;
         for ref_item in original_tractogram.into_iter() {
             writer.write(ref_item);
         }
@@ -119,7 +119,7 @@ fn test_write_standard() -> Result<()> {
     let (original_header, original_tractogram) = load_trk("data/standard.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header))?;
+        let mut writer = Writer::new(&write_to, Some(&original_header))?;
         writer.write(&original_tractogram.streamlines[0]);
         writer.write(&original_tractogram.streamlines[1]);
         writer.write(&original_tractogram.streamlines[2]);
@@ -140,7 +140,7 @@ fn test_write_standard_lps() -> Result<()> {
     let (original_header, original_tractogram) = load_trk("data/standard.LPS.trk");
 
     {
-        let mut writer = Writer::new(&write_to, Some(original_header.clone()))?;
+        let mut writer = Writer::new(&write_to, Some(&original_header))?;
         #[rustfmt::skip]
         assert_eq!(
             writer.affine4,
@@ -181,7 +181,7 @@ fn test_write_complex() -> Result<()> {
     let reader = Reader::new("data/complex.trk")?;
 
     {
-        let mut writer = Writer::new(&write_to, Some(reader.header.clone()))?;
+        let mut writer = Writer::new(&write_to, Some(&reader.header))?;
         for item in reader.into_iter() {
             writer.write(item);
         }

@@ -27,7 +27,7 @@ fn main() -> Result<()> {
         .unwrap_or_else(|e| e.exit());
 
     let reader = Reader::new(args.get_str("<input>"))?;
-    let mut writer = Writer::new(args.get_str("<output>"), Some(reader.header.clone()))?;
+    let mut writer = Writer::new(args.get_str("<output>"), Some(&reader.header))?;
 
     let mut rng = match args.get_str("--seed").parse::<u8>() {
         Ok(seed) => SmallRng::from_seed([seed; 32]),

@@ -82,22 +82,24 @@ impl<'data> Writable for &'data [Point] {
 }
 
 impl Writer {
-    pub fn new<P: AsRef<Path>>(path: P, reference: Option<Header>) -> Result<Writer> {
+    pub fn new<P: AsRef<Path>>(path: P, reference: Option<&Header>) -> Result<Writer> {
         let f = File::create(path).expect("Can't create new trk file.");
         let mut writer = BufWriter::new(f);
 
-        let (header, affine4) = match reference {
+        let (affine4, nb_scalars) = match reference {
             Some(header) => {
-                // We are only interested in the inversed affine
+                header.write(&mut writer)?;
                 let affine4 = header
                     .affine4_to_rasmm
                     .try_inverse()
                     .expect("Unable to inverse 4x4 affine matrix");
-                (header, affine4)
+                (affine4, header.scalars_name.len())
             }
-            None => (Header::default(), Affine4::identity()),
+            None => {
+                Header::default().write(&mut writer)?;
+                (Affine4::identity(), 0)
+            }
         };
-        header.write(&mut writer)?;
         let (affine, translation) = get_affine_and_translation(&affine4);
 
         Ok(Writer {
@@ -106,7 +108,7 @@ impl Writer {
             affine,
             translation,
             real_n_count: 0,
-            nb_scalars: header.scalars_name.len(),
+            nb_scalars,
             raw: false,
             voxel_space: false,
         })

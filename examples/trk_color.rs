@@ -48,7 +48,7 @@ fn main() -> Result<()> {
 
 fn uniform(reader: Reader, header: Header, write_to: &str, r: u32, g: u32, b: u32) {
     let (r, g, b) = (r as f32, g as f32, b as f32);
-    let mut writer = Writer::new(write_to, Some(header)).unwrap();
+    let mut writer = Writer::new(write_to, Some(&header)).unwrap();
     for (streamline, mut scalars, properties) in reader.into_iter() {
         for _ in 0..streamline.len() {
             scalars.push(r);
@@ -61,7 +61,7 @@ fn uniform(reader: Reader, header: Header, write_to: &str, r: u32, g: u32, b: u3
 }
 
 fn local(reader: Reader, header: Header, write_to: &str) {
-    let mut writer = Writer::new(write_to, Some(header)).unwrap();
+    let mut writer = Writer::new(write_to, Some(&header)).unwrap();
     for (streamline, mut scalars, properties) in reader.into_iter() {
         let mut add = |p1: &Point, p2: &Point| {
             let x = p2.x - p1.x;

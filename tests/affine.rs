@@ -16,7 +16,7 @@ mod nifti_tests {
         let write_to = get_random_trk_path();
 
         {
-            let mut writer = Writer::new(&write_to, Some(Header::from_nifti(&header)))?;
+            let mut writer = Writer::new(&write_to, Some(&Header::from_nifti(&header)))?;
             writer.apply_affine(&header.affine());
             writer.write(
                 &[
