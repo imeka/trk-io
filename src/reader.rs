@@ -7,7 +7,7 @@ use nalgebra::Vector3;
 use crate::{
     cheader::Endianness,
     tractogram::{Point, Points, Streamlines, Tractogram, TractogramItem},
-    Affine, ArraySequence, Header, Spacing, Translation,
+    Affine, ArraySequence, Header, Spacing, Translation, Writer,
 };
 
 pub struct Reader {
@@ -16,7 +16,7 @@ pub struct Reader {
     pub header: Header,
 
     raw: bool,
-    voxel_space: bool,
+    voxel_space: Option<Spacing>,
 
     floats_per_point: usize,
     buffer: Vec<f32>,
@@ -35,7 +35,7 @@ impl Reader {
         let buffer = Vec::with_capacity(300);
 
         let raw = false;
-        let voxel_space = false;
+        let voxel_space = None;
 
         Ok(Reader { reader, endianness, header, raw, voxel_space, floats_per_point, buffer })
     }
@@ -50,7 +50,7 @@ impl Reader {
             panic!("Can't use raw + voxel space reading");
         }
 
-        self.voxel_space = true;
+        self.voxel_space = Some(spacing);
         self.header.affine_to_rasmm =
             Affine::from_diagonal(&Vector3::new(1.0 / spacing.x, 1.0 / spacing.y, 1.0 / spacing.z));
         self.header.translation = Translation::zeros();
@@ -61,12 +61,23 @@ impl Reader {
     ///
     /// Panics if `to_voxel_space` has been called.
     pub fn raw(mut self) -> Self {
-        if self.voxel_space {
+        if self.voxel_space.is_some() {
             panic!("Can't use voxel space + raw reading");
         }
 
         self.raw = true;
         self
+    }
+
+    /// Build a compatible `Writer` from the collected information in `self`.
+    pub fn build_writer<P: AsRef<Path>>(&self, path: P) -> Result<Writer> {
+        let mut w = Writer::new(path, Some(&self.header))?;
+        if let Some(spacing) = self.voxel_space {
+            w = w.from_voxel_space(spacing);
+        } else if self.raw {
+            w = w.raw();
+        }
+        Ok(w)
     }
 
     /// Iterate only on streamlines (`Vec<Point>`), ignoring scalars and properties.
