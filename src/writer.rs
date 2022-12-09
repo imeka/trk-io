@@ -42,8 +42,9 @@ pub struct Writer {
     pub affine4: Affine4,
     affine: Affine,
     translation: Translation,
-    real_n_count: i32,
     nb_scalars: usize,
+
+    real_n_count: i32,
 }
 
 pub trait Writable {
@@ -83,30 +84,35 @@ impl Writer {
         let f = File::create(path).expect("Can't create new trk file.");
         let mut writer = BufWriter::new(f);
 
-        let header = match reference {
-            Some(r) => r,
-            None => Header::default(),
+        let (header, affine4) = match reference {
+            Some(header) => {
+                // We are only interested in the inversed affine
+                let affine4 = header
+                    .affine4_to_rasmm
+                    .try_inverse()
+                    .expect("Unable to inverse 4x4 affine matrix");
+                (header, affine4)
+            }
+            None => (Header::default(), Affine4::identity()),
         };
         header.write(&mut writer)?;
+        let (affine, translation) = get_affine_and_translation(&affine4);
         let nb_scalars = header.scalars_name.len();
 
-        // We are only interested in the inversed affine
-        let affine4 =
-            header.affine4_to_rasmm.try_inverse().expect("Unable to inverse 4x4 affine matrix");
-        let (affine, translation) = get_affine_and_translation(&affine4);
+        let real_n_count = 0;
 
-        Ok(Writer { writer, affine4, affine, translation, real_n_count: 0, nb_scalars })
+        Ok(Writer { writer, affine4, affine, translation, real_n_count, nb_scalars })
     }
 
     /// Modifies the affine in order to write all streamlines from voxel space to the right
     /// coordinate space on disk.
     ///
-    /// The resulting file will only valid if the streamlines were read using
-    /// `apply_transform_to_voxel_space`.
-    pub fn apply_transform_from_voxel_space(&mut self, spacing: Spacing) {
+    /// The resulting file will only valid if the streamlines were read using `to_voxel_space`.
+    pub fn from_voxel_space(mut self, spacing: Spacing) -> Self {
         self.affine = Affine::from_diagonal(&spacing);
         self.affine4 = Affine4::from_diagonal(&Vector4::new(spacing.x, spacing.y, spacing.z, 1.0));
         self.translation = Translation::zeros();
+        self
     }
 
     /// Resets the affine so that no transformation is applied to the points.
@@ -120,7 +126,7 @@ impl Writer {
 
     /// Applies a new affine over the current affine.
     ///
-    /// The TrackVis header (on disk) will NOT be modified.
+    /// The TrackVis header (on disk) will **not** be modified.
     pub fn apply_affine(&mut self, affine: &Affine4) {
         self.affine4 = self.affine4 * affine;
         let (affine, translation) = get_affine_and_translation(&self.affine4);

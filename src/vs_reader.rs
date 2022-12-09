@@ -14,9 +14,7 @@ impl VoxelSpaceReader {
     /// * `spacing` - Spacing (pixel dimension `pixdim`) obtained from the `Header` or from a
     ///   reference image.
     pub fn new<P: AsRef<std::path::Path>>(path: P, spacing: Spacing) -> (Header, VoxelSpaceReader) {
-        let mut reader = Reader::new(path).unwrap();
-        reader.apply_transform_to_voxel_space(spacing);
-
+        let reader = Reader::new(path).unwrap().to_voxel_space(spacing);
         let header = reader.header.clone();
         (header, VoxelSpaceReader { reader })
     }

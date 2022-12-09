@@ -15,11 +15,16 @@ pub struct Reader {
     endianness: Endianness,
     pub header: Header,
 
+    voxel_space: bool,
+
     floats_per_point: usize,
     buffer: Vec<f32>,
 }
 
 impl Reader {
+    /// Create an object to read all points of a TrackVis file in world space.
+    ///
+    /// Will also read the scalars and properties, if requested.
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Reader> {
         let f = File::open(path.as_ref())
             .with_context(|| format!("Failed to load {:?}", path.as_ref()))?;
@@ -28,16 +33,20 @@ impl Reader {
         let floats_per_point = 3 + header.scalars_name.len();
         let buffer = Vec::with_capacity(300);
 
-        Ok(Reader { reader, endianness, header, floats_per_point, buffer })
+        let voxel_space = false;
+
+        Ok(Reader { reader, endianness, header, voxel_space, floats_per_point, buffer })
     }
 
     /// Modify the affine in order to read all streamlines in voxel space.
     ///
-    /// If you do not call this function, all streamlines will be read in world space.
-    pub fn apply_transform_to_voxel_space(&mut self, spacing: Spacing) {
+    /// Once this function is called, it's not possible to revert to reading in world space.
+    pub fn to_voxel_space(mut self, spacing: Spacing) -> Self {
+        self.voxel_space = true;
         self.header.affine_to_rasmm =
             Affine::from_diagonal(&Vector3::new(1.0 / spacing.x, 1.0 / spacing.y, 1.0 / spacing.z));
         self.header.translation = Translation::zeros();
+        self
     }
 
     /// Iterate only on streamlines (`Vec<Point>`), ignoring scalars and properties.
