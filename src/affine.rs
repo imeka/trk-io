@@ -10,7 +10,7 @@ where
     T: Copy + Scalar,
 {
     let translation = Vector3::<T>::new(affine[12], affine[13], affine[14]);
-    let affine = affine.fixed_slice::<3, 3>(0, 0).into_owned();
+    let affine = affine.fixed_view::<3, 3>(0, 0).into_owned();
     (affine, translation)
 }
 

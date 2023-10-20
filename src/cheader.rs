@@ -186,8 +186,7 @@ impl CHeader {
         let voxel_to_rasmm = Affine4::from_iterator(self.vox_to_ras.iter().cloned()).transpose();
 
         let header_ornt = axcodes_to_orientations(from_utf8(&self.voxel_order).unwrap());
-        let affine_order =
-            affine_to_axcodes(&voxel_to_rasmm.fixed_slice::<3, 3>(0, 0).into_owned());
+        let affine_order = affine_to_axcodes(&voxel_to_rasmm.fixed_view::<3, 3>(0, 0).into_owned());
         let affine_ornt = axcodes_to_orientations(&affine_order);
         let orientations = orientations_transform(&header_ornt, &affine_ornt);
         let inv = inverse_orientations_affine(&orientations, self.dim);
