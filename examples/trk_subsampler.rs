@@ -31,13 +31,13 @@ fn main() -> Result<()> {
 
     let mut rng = match args.get_str("--seed").parse::<u8>() {
         Ok(seed) => SmallRng::from_seed([seed; 32]),
-        Err(_) => SmallRng::from_entropy(),
+        Err(_) => SmallRng::from_os_rng(),
     };
 
     if let Ok(percent) = args.get_str("--percent").parse::<f32>() {
         let percent = percent / 100.0;
         for item in reader {
-            if rng.gen::<f32>() < percent {
+            if rng.random::<f32>() < percent {
                 writer.write(item);
             }
         }

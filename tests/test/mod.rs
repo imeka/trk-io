@@ -7,7 +7,7 @@ use trk_io::{Header, Reader, Streamlines, Tractogram};
 
 pub fn get_random_trk_path() -> String {
     let dir = TempDir::new().unwrap();
-    let path = dir.into_path().join("out.trk");
+    let path = dir.keep().join("out.trk");
     path.to_str().unwrap().to_string()
 }
 
