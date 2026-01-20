@@ -160,8 +160,8 @@ impl<T> ArraySequence<T> {
 
     /// Same as obj[i].len(), without building a slice
     pub fn length_of_array(&self, i: usize) -> usize {
-        let current = unsafe { *self.offsets.get_unchecked(i) };
-        let next = unsafe { *self.offsets.get_unchecked(i + 1) };
+        let current = self.offsets[i];
+        let next = self.offsets[i + 1];
         next - current
     }
 
