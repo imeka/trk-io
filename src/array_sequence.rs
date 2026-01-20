@@ -179,11 +179,11 @@ impl<T> ArraySequence<T> {
         new
     }
 
-    pub fn iter(&self) -> ArraySequenceIterator<T> {
+    pub fn iter(&self) -> ArraySequenceIterator<'_, T> {
         self.into_iter()
     }
 
-    pub fn iter_mut(&mut self) -> ArraySequenceIteratorMut<T> {
+    pub fn iter_mut(&mut self) -> ArraySequenceIteratorMut<'_, T> {
         self.into_iter()
     }
 }

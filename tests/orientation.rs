@@ -4,11 +4,11 @@ use ndarray::Axis;
 #[cfg(feature = "nifti_images")]
 use trk_io::orientation::apply_orientation;
 use trk_io::{
-    orientation::{
-        affine_to_axcodes, axcodes_to_orientations, orientations_to_axcodes,
-        orientations_transform, Direction,
-    },
     Affine,
+    orientation::{
+        Direction, affine_to_axcodes, axcodes_to_orientations, orientations_to_axcodes,
+        orientations_transform,
+    },
 };
 
 #[test]
@@ -97,9 +97,9 @@ fn test_orientations_transform() {
 #[cfg(feature = "nifti_images")]
 #[test]
 fn test_apply_orientation() {
-    use ndarray::{arr3, Array1, Array4};
+    use ndarray::{Array1, Array4, arr3};
 
-    let arr = (0..24).collect::<Array1<_>>().into_shape((2, 3, 4)).unwrap();
+    let arr = (0..24).collect::<Array1<_>>().into_shape_with_order((2, 3, 4)).unwrap();
     let lsp_to_las = [(0, Direction::Normal), (2, Direction::Normal), (1, Direction::Reversed)];
     assert_eq!(
         apply_orientation(arr.clone(), lsp_to_las),
