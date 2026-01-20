@@ -83,8 +83,8 @@ impl<T> Index<usize> for ArraySequence<T> {
     type Output = [T];
 
     fn index<'a>(&'a self, i: usize) -> &'a Self::Output {
-        let start = unsafe { *self.offsets.get_unchecked(i) };
-        let end = unsafe { *self.offsets.get_unchecked(i + 1) };
+        let start = self.offsets[i];
+        let end = self.offsets[i + 1];
         &self.data[start..end]
     }
 }
@@ -160,8 +160,8 @@ impl<T> ArraySequence<T> {
 
     /// Same as obj[i].len(), without building a slice
     pub fn length_of_array(&self, i: usize) -> usize {
-        let current = unsafe { *self.offsets.get_unchecked(i) };
-        let next = unsafe { *self.offsets.get_unchecked(i + 1) };
+        let current = self.offsets[i];
+        let next = self.offsets[i + 1];
         next - current
     }
 
@@ -179,11 +179,11 @@ impl<T> ArraySequence<T> {
         new
     }
 
-    pub fn iter(&self) -> ArraySequenceIterator<T> {
+    pub fn iter(&self) -> ArraySequenceIterator<'_, T> {
         self.into_iter()
     }
 
-    pub fn iter_mut(&mut self) -> ArraySequenceIteratorMut<T> {
+    pub fn iter_mut(&mut self) -> ArraySequenceIteratorMut<'_, T> {
         self.into_iter()
     }
 }
