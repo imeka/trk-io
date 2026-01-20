@@ -9,7 +9,7 @@ readme = "README.md"
 keywords = ["diffusion-mri", "trackvis", "trk"]
 categories = ["data-structures", "science"]
 license = "BSD-2-Clause"
-edition = "2021"
+edition = "2024"
 
 [features]
 nifti_images = ["ndarray", "nifti"]
