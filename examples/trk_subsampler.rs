@@ -1,6 +1,6 @@
 use anyhow::Result;
 use docopt::Docopt;
-use rand::{rngs::SmallRng, Rng, SeedableRng};
+use rand::{RngExt, SeedableRng, rngs::SmallRng};
 
 use trk_io::{Reader, Writer};
 
@@ -29,9 +29,9 @@ fn main() -> Result<()> {
     let reader = Reader::new(args.get_str("<input>"))?;
     let mut writer = Writer::new(args.get_str("<output>"), Some(&reader.header))?;
 
-    let mut rng = match args.get_str("--seed").parse::<u8>() {
+    let mut rng: SmallRng = match args.get_str("--seed").parse::<u8>() {
         Ok(seed) => SmallRng::from_seed([seed; 32]),
-        Err(_) => SmallRng::from_os_rng(),
+        Err(_) => rand::make_rng(),
     };
 
     if let Ok(percent) = args.get_str("--percent").parse::<f32>() {
